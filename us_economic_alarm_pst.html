@@ -34,13 +34,15 @@
   .header {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
-    padding: 16px 20px 14px;
+    padding: 18px 20px 14px;
     position: sticky; top: 0; z-index: 100;
   }
-  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-  .header h1 { font-family: var(--mono); font-size: 15px; font-weight: 600; color: var(--accent); letter-spacing: 0.5px; }
-  .pst-clock { font-family: var(--mono); font-size: 18px; font-weight: 600; color: var(--text); letter-spacing: 1px; }
-  .pst-label { font-size: 10px; color: var(--text2); font-family: var(--mono); }
+  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 12px; }
+  .header h1 { font-family: var(--mono); font-size: 22px; font-weight: 600; color: var(--accent); letter-spacing: 0.5px; line-height: 1.2; }
+  .header-right { text-align: right; flex-shrink: 0; }
+  .pst-date { font-family: var(--mono); font-size: 15px; font-weight: 500; color: var(--text2); margin-bottom: 3px; }
+  .pst-clock { font-family: var(--mono); font-size: 34px; font-weight: 600; color: var(--text); letter-spacing: 2px; line-height: 1; }
+  .pst-label { font-size: 10px; color: var(--accent); font-family: var(--mono); margin-top: 2px; letter-spacing: 0.5px; }
   .next-alarm-bar {
     background: linear-gradient(90deg, rgba(0,196,255,0.08), transparent);
     border: 0.5px solid rgba(0,196,255,0.2);
@@ -77,12 +79,13 @@
   }
   .ind-card.active-card { border-color: rgba(0,196,255,0.3); }
   .ind-card.inactive { opacity: 0.45; }
-  .ind-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
-  .ind-info { flex: 1; }
-  .ind-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
-  .ind-sub { font-family: var(--mono); font-size: 10px; color: var(--text2); }
-  .stars { font-size: 11px; margin-bottom: 2px; }
-  .toggle-wrap { display: flex; align-items: center; gap: 6px; }
+  .ind-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  .ind-left { flex: 1; }
+  .ind-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; min-width: 120px; }
+  .ind-name { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .ind-sub { font-family: var(--mono); font-size: 11px; color: var(--text2); background: var(--surface2); border: 0.5px solid var(--border); border-radius: 5px; padding: 3px 8px; display: inline-block; }
+  .stars { font-size: 13px; margin-bottom: 3px; }
+  .toggle-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 6px; width: 100%; }
   .toggle { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
   .toggle input { opacity: 0; width: 0; height: 0; }
   .toggle-track { position: absolute; inset: 0; background: var(--border); border-radius: 22px; cursor: pointer; transition: 0.2s; }
@@ -102,8 +105,10 @@
   .alarm-btn.on { background: rgba(0,102,255,0.15); border-color: var(--accent2); color: var(--accent); }
   .alarm-btn:active { transform: scale(0.96); }
 
-  /* PST time display per card */
-  .ind-time { font-family: var(--mono); font-size: 11px; color: var(--warn); background: rgba(255,149,0,0.08); border: 0.5px solid rgba(255,149,0,0.2); border-radius: 5px; padding: 3px 8px; display: inline-block; margin-bottom: 8px; }
+  /* Local time display per card */
+  .ind-time-row { margin-bottom: 8px; }
+  .ind-time-label { display: none; }
+  .ind-time { font-family: var(--mono); font-size: 15px; font-weight: 600; color: var(--warn); background: rgba(255,149,0,0.08); border: 0.5px solid rgba(255,149,0,0.2); border-radius: 6px; padding: 5px 12px; text-align: right; white-space: nowrap; display: inline-block; }
 
   /* Add button */
   .add-btn {
@@ -187,16 +192,34 @@
   .step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--accent2); color: #fff; font-family: var(--mono); font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
   .step-text { font-size: 13px; color: var(--text); line-height: 1.6; }
   .step-text strong { color: var(--accent); font-weight: 600; }
+
+  /* Simulation modal */
+  .sim-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 999; display: flex; align-items: flex-start; justify-content: center; padding-top: 60px; }
+  .sim-modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; width: 88%; max-width: 360px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .sim-header { background: #1a2236; padding: 12px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); }
+  .sim-app-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--accent2); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .sim-app-name { font-size: 12px; color: var(--text2); font-family: var(--mono); }
+  .sim-time { font-size: 11px; color: var(--text3); font-family: var(--mono); margin-left: auto; }
+  .sim-body { padding: 16px; }
+  .sim-title { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .sim-msg { font-size: 14px; color: var(--text2); line-height: 1.5; margin-bottom: 16px; }
+  .sim-actions { display: flex; gap: 8px; }
+  .sim-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-family: var(--mono); font-size: 12px; cursor: pointer; text-align: center; }
+  .sim-btn.primary { background: var(--accent2); color: #fff; border-color: var(--accent2); }
+  .sim-close { margin-top: 10px; width: 100%; padding: 10px; border: none; background: transparent; color: var(--text3); font-size: 12px; cursor: pointer; font-family: var(--mono); }
+  .sim-trigger-btn { width: 100%; padding: 13px; border: 1px solid rgba(0,196,255,0.3); border-radius: 10px; background: rgba(0,196,255,0.05); color: var(--accent); font-family: var(--mono); font-size: 12px; cursor: pointer; margin-top: 4px; letter-spacing: 0.3px; }
+  .sim-trigger-btn:active { transform: scale(0.98); }
 </style>
 </head>
 <body>
 
 <div class="header">
   <div class="header-top">
-    <h1>🇺🇸 US 경제지표 알람</h1>
-    <div style="text-align:right">
+    <h1>🇺🇸 US<br>경제지표<br>알람</h1>
+    <div class="header-right">
+      <div class="pst-date" id="header-date"></div>
       <div class="pst-clock" id="clock">--:--:--</div>
-      <div class="pst-label">PST (LA TIME)</div>
+      <div class="pst-label">LA · PST/PDT</div>
     </div>
   </div>
   <div class="next-alarm-bar" id="next-alarm-bar">
@@ -226,19 +249,19 @@
     <!-- NFP -->
     <div class="ind-card active-card" id="card-nfp">
       <div class="ind-top">
-        <div class="ind-info">
+        <div class="ind-left">
           <div class="stars">⭐⭐⭐</div>
           <div class="ind-name">NFP 비농업 고용</div>
-          <div class="ind-sub">매월 첫째 금요일</div>
         </div>
-        <div class="toggle-wrap">
-          <label class="toggle">
+        <div class="ind-right">
+          <div class="ind-sub">매월 첫째 금요일</div>
+          <span class="ind-time" data-pst-hour="5" data-pst-min="30">--:-- --</span>
+          <div class="toggle-wrap"><label class="toggle">
             <input type="checkbox" checked onchange="toggleCard('nfp', this.checked)">
             <span class="toggle-track"></span>
-          </label>
+          </label></div>
         </div>
       </div>
-      <div class="ind-time">PST 05:30 AM (발표시간)</div>
       <div class="alarm-row">
         <button class="alarm-btn on" onclick="toggleAlarm(this)">전날 밤</button>
         <button class="alarm-btn on" onclick="toggleAlarm(this)">1시간 전</button>
@@ -249,19 +272,19 @@
     <!-- CPI -->
     <div class="ind-card active-card" id="card-cpi">
       <div class="ind-top">
-        <div class="ind-info">
+        <div class="ind-left">
           <div class="stars">⭐⭐⭐</div>
           <div class="ind-name">CPI 소비자물가지수</div>
-          <div class="ind-sub">매월 중순 수요일</div>
         </div>
-        <div class="toggle-wrap">
-          <label class="toggle">
+        <div class="ind-right">
+          <div class="ind-sub">매월 중순 수요일</div>
+          <span class="ind-time" data-pst-hour="5" data-pst-min="30">--:-- --</span>
+          <div class="toggle-wrap"><label class="toggle">
             <input type="checkbox" checked onchange="toggleCard('cpi', this.checked)">
             <span class="toggle-track"></span>
-          </label>
+          </label></div>
         </div>
       </div>
-      <div class="ind-time">PST 05:30 AM (발표시간)</div>
       <div class="alarm-row">
         <button class="alarm-btn on" onclick="toggleAlarm(this)">전날 밤</button>
         <button class="alarm-btn on" onclick="toggleAlarm(this)">1시간 전</button>
@@ -272,19 +295,19 @@
     <!-- FOMC -->
     <div class="ind-card active-card" id="card-fomc">
       <div class="ind-top">
-        <div class="ind-info">
+        <div class="ind-left">
           <div class="stars">⭐⭐⭐</div>
           <div class="ind-name">FOMC 금리 결정</div>
-          <div class="ind-sub">연 8회 수요일</div>
         </div>
-        <div class="toggle-wrap">
-          <label class="toggle">
+        <div class="ind-right">
+          <div class="ind-sub">연 8회 수요일</div>
+          <span class="ind-time" data-pst-hour="14" data-pst-min="0">--:-- --</span>
+          <div class="toggle-wrap"><label class="toggle">
             <input type="checkbox" checked onchange="toggleCard('fomc', this.checked)">
             <span class="toggle-track"></span>
-          </label>
+          </label></div>
         </div>
       </div>
-      <div class="ind-time">PST 02:00 PM (발표시간)</div>
       <div class="alarm-row">
         <button class="alarm-btn on" onclick="toggleAlarm(this)">전날 밤</button>
         <button class="alarm-btn on" onclick="toggleAlarm(this)">1시간 전</button>
@@ -295,19 +318,19 @@
     <!-- Core PCE -->
     <div class="ind-card active-card" id="card-pce">
       <div class="ind-top">
-        <div class="ind-info">
+        <div class="ind-left">
           <div class="stars">⭐⭐⭐</div>
           <div class="ind-name">Core PCE 물가</div>
-          <div class="ind-sub">매월 말 금요일</div>
         </div>
-        <div class="toggle-wrap">
-          <label class="toggle">
+        <div class="ind-right">
+          <div class="ind-sub">매월 말 금요일</div>
+          <span class="ind-time" data-pst-hour="5" data-pst-min="30">--:-- --</span>
+          <div class="toggle-wrap"><label class="toggle">
             <input type="checkbox" checked onchange="toggleCard('pce', this.checked)">
             <span class="toggle-track"></span>
-          </label>
+          </label></div>
         </div>
       </div>
-      <div class="ind-time">PST 05:30 AM (발표시간)</div>
       <div class="alarm-row">
         <button class="alarm-btn on" onclick="toggleAlarm(this)">전날 밤</button>
         <button class="alarm-btn on" onclick="toggleAlarm(this)">1시간 전</button>
@@ -318,19 +341,19 @@
     <!-- GDP -->
     <div class="ind-card active-card" id="card-gdp">
       <div class="ind-top">
-        <div class="ind-info">
+        <div class="ind-left">
           <div class="stars">⭐⭐⭐</div>
           <div class="ind-name">GDP 국내총생산</div>
-          <div class="ind-sub">분기별 (예비치/확정치)</div>
         </div>
-        <div class="toggle-wrap">
-          <label class="toggle">
+        <div class="ind-right">
+          <div class="ind-sub">분기별 (예비치/확정치)</div>
+          <span class="ind-time" data-pst-hour="5" data-pst-min="30">--:-- --</span>
+          <div class="toggle-wrap"><label class="toggle">
             <input type="checkbox" checked onchange="toggleCard('gdp', this.checked)">
             <span class="toggle-track"></span>
-          </label>
+          </label></div>
         </div>
       </div>
-      <div class="ind-time">PST 05:30 AM (발표시간)</div>
       <div class="alarm-row">
         <button class="alarm-btn on" onclick="toggleAlarm(this)">전날 밤</button>
         <button class="alarm-btn" onclick="toggleAlarm(this)">1시간 전</button>
@@ -341,19 +364,19 @@
     <!-- Jobless Claims -->
     <div class="ind-card active-card" id="card-jobless">
       <div class="ind-top">
-        <div class="ind-info">
+        <div class="ind-left">
           <div class="stars">⭐⭐</div>
           <div class="ind-name">실업수당 청구건수</div>
-          <div class="ind-sub">매주 목요일</div>
         </div>
-        <div class="toggle-wrap">
-          <label class="toggle">
+        <div class="ind-right">
+          <div class="ind-sub">매주 목요일</div>
+          <span class="ind-time" data-pst-hour="5" data-pst-min="30">--:-- --</span>
+          <div class="toggle-wrap"><label class="toggle">
             <input type="checkbox" onchange="toggleCard('jobless', this.checked)">
             <span class="toggle-track"></span>
-          </label>
+          </label></div>
         </div>
       </div>
-      <div class="ind-time">PST 05:30 AM (발표시간)</div>
       <div class="alarm-row">
         <button class="alarm-btn" onclick="toggleAlarm(this)">전날 밤</button>
         <button class="alarm-btn" onclick="toggleAlarm(this)">1시간 전</button>
@@ -364,19 +387,19 @@
     <!-- ISM Manufacturing -->
     <div class="ind-card" id="card-ism">
       <div class="ind-top">
-        <div class="ind-info">
+        <div class="ind-left">
           <div class="stars">⭐⭐</div>
           <div class="ind-name">ISM 제조업 PMI</div>
-          <div class="ind-sub">매월 첫째 영업일</div>
         </div>
-        <div class="toggle-wrap">
-          <label class="toggle">
+        <div class="ind-right">
+          <div class="ind-sub">매월 첫째 영업일</div>
+          <span class="ind-time" data-pst-hour="7" data-pst-min="0">--:-- --</span>
+          <div class="toggle-wrap"><label class="toggle">
             <input type="checkbox" onchange="toggleCard('ism', this.checked)">
             <span class="toggle-track"></span>
-          </label>
+          </label></div>
         </div>
       </div>
-      <div class="ind-time">PST 07:00 AM (발표시간)</div>
       <div class="alarm-row">
         <button class="alarm-btn" onclick="toggleAlarm(this)">전날 밤</button>
         <button class="alarm-btn" onclick="toggleAlarm(this)">1시간 전</button>
@@ -387,19 +410,19 @@
     <!-- Retail Sales -->
     <div class="ind-card" id="card-retail">
       <div class="ind-top">
-        <div class="ind-info">
+        <div class="ind-left">
           <div class="stars">⭐⭐⭐</div>
           <div class="ind-name">소매판매 Retail Sales</div>
-          <div class="ind-sub">매월 중순</div>
         </div>
-        <div class="toggle-wrap">
-          <label class="toggle">
+        <div class="ind-right">
+          <div class="ind-sub">매월 중순</div>
+          <span class="ind-time" data-pst-hour="5" data-pst-min="30">--:-- --</span>
+          <div class="toggle-wrap"><label class="toggle">
             <input type="checkbox" onchange="toggleCard('retail', this.checked)">
             <span class="toggle-track"></span>
-          </label>
+          </label></div>
         </div>
       </div>
-      <div class="ind-time">PST 05:30 AM (발표시간)</div>
       <div class="alarm-row">
         <button class="alarm-btn" onclick="toggleAlarm(this)">전날 밤</button>
         <button class="alarm-btn" onclick="toggleAlarm(this)">1시간 전</button>
@@ -408,7 +431,127 @@
     </div>
 
     <div class="divider"></div>
-    <button class="add-btn" onclick="alert('추가 지표: ADP 고용, PPI, 무역수지, 내구재주문, 소비자신뢰지수 등을 원하시면 알려주세요!')">+ 지표 추가 요청하기</button>
+    <button class="sim-trigger-btn" onclick="openSimModal()">🔔 알람 시뮬레이션 테스트 (소리 포함)</button>
+
+    <div class="section-label">🔥 인플레이션 관련 지표</div>
+
+    <!-- PPI -->
+    <div class="ind-card" id="card-ppi">
+      <div class="ind-top">
+        <div class="ind-left">
+          <div class="stars">⭐⭐⭐</div>
+          <div class="ind-name">PPI 생산자물가지수</div>
+        </div>
+        <div class="ind-right">
+          <div class="ind-sub">매월 중순 · CPI 선행지표</div>
+          <span class="ind-time" data-pst-hour="5" data-pst-min="30">--:-- --</span>
+          <div class="toggle-wrap"><label class="toggle">
+            <input type="checkbox" onchange="toggleCard('ppi', this.checked)">
+            <span class="toggle-track"></span>
+          </label></div>
+        </div>
+      </div>
+      <div class="alarm-row">
+        <button class="alarm-btn" onclick="toggleAlarm(this)">전날 밤</button>
+        <button class="alarm-btn" onclick="toggleAlarm(this)">1시간 전</button>
+        <button class="alarm-btn" onclick="toggleAlarm(this)">5분 전</button>
+      </div>
+    </div>
+
+    <!-- Core CPI -->
+    <div class="ind-card" id="card-corecpi">
+      <div class="ind-top">
+        <div class="ind-left">
+          <div class="stars">⭐⭐⭐</div>
+          <div class="ind-name">Core CPI 핵심 소비자물가</div>
+        </div>
+        <div class="ind-right">
+          <div class="ind-sub">매월 · 식품·에너지 제외</div>
+          <span class="ind-time" data-pst-hour="5" data-pst-min="30">--:-- --</span>
+          <div class="toggle-wrap"><label class="toggle">
+            <input type="checkbox" onchange="toggleCard('corecpi', this.checked)">
+            <span class="toggle-track"></span>
+          </label></div>
+        </div>
+      </div>
+      <div class="alarm-row">
+        <button class="alarm-btn" onclick="toggleAlarm(this)">전날 밤</button>
+        <button class="alarm-btn" onclick="toggleAlarm(this)">1시간 전</button>
+        <button class="alarm-btn" onclick="toggleAlarm(this)">5분 전</button>
+      </div>
+    </div>
+
+    <!-- Michigan 1년 기대인플레 -->
+    <div class="ind-card" id="card-mich1">
+      <div class="ind-top">
+        <div class="ind-left">
+          <div class="stars">⭐⭐⭐</div>
+          <div class="ind-name">Michigan 1년 기대인플레</div>
+        </div>
+        <div class="ind-right">
+          <div class="ind-sub">매월 예비·확정치</div>
+          <span class="ind-time" data-pst-hour="7" data-pst-min="0">--:-- --</span>
+          <div class="toggle-wrap"><label class="toggle">
+            <input type="checkbox" onchange="toggleCard('mich1', this.checked)">
+            <span class="toggle-track"></span>
+          </label></div>
+        </div>
+      </div>
+      <div class="alarm-row">
+        <button class="alarm-btn" onclick="toggleAlarm(this)">전날 밤</button>
+        <button class="alarm-btn" onclick="toggleAlarm(this)">1시간 전</button>
+        <button class="alarm-btn" onclick="toggleAlarm(this)">5분 전</button>
+      </div>
+    </div>
+
+    <!-- Michigan 5년 기대인플레 -->
+    <div class="ind-card" id="card-mich5">
+      <div class="ind-top">
+        <div class="ind-left">
+          <div class="stars">⭐⭐⭐</div>
+          <div class="ind-name">Michigan 5년 기대인플레</div>
+        </div>
+        <div class="ind-right">
+          <div class="ind-sub">매월 · Fed 장기 인플레 기대</div>
+          <span class="ind-time" data-pst-hour="7" data-pst-min="0">--:-- --</span>
+          <div class="toggle-wrap"><label class="toggle">
+            <input type="checkbox" onchange="toggleCard('mich5', this.checked)">
+            <span class="toggle-track"></span>
+          </label></div>
+        </div>
+      </div>
+      <div class="alarm-row">
+        <button class="alarm-btn" onclick="toggleAlarm(this)">전날 밤</button>
+        <button class="alarm-btn" onclick="toggleAlarm(this)">1시간 전</button>
+        <button class="alarm-btn" onclick="toggleAlarm(this)">5분 전</button>
+      </div>
+    </div>
+
+    <!-- Unit Labor Costs -->
+    <div class="ind-card" id="card-ulc">
+      <div class="ind-top">
+        <div class="ind-left">
+          <div class="stars">⭐⭐⭐</div>
+          <div class="ind-name">Unit Labor Costs 단위노동비용</div>
+        </div>
+        <div class="ind-right">
+          <div class="ind-sub">분기별 · 임금발 인플레 선행</div>
+          <span class="ind-time" data-pst-hour="5" data-pst-min="30">--:-- --</span>
+          <div class="toggle-wrap"><label class="toggle">
+            <input type="checkbox" onchange="toggleCard('ulc', this.checked)">
+            <span class="toggle-track"></span>
+          </label></div>
+        </div>
+      </div>
+      <div class="alarm-row">
+        <button class="alarm-btn" onclick="toggleAlarm(this)">전날 밤</button>
+        <button class="alarm-btn" onclick="toggleAlarm(this)">1시간 전</button>
+        <button class="alarm-btn" onclick="toggleAlarm(this)">5분 전</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <button class="add-btn" onclick="alert('더 추가하고 싶은 지표를 Claude에게 말씀해주세요!')">+ 지표 추가 요청하기</button>
   </div>
 
   <!-- TAB 1: 예정 알람 -->
@@ -631,6 +774,67 @@
 </div>
 
 <script>
+// ===== Global stubs (호이스팅 보장) =====
+window.openSimModal = function() {
+  const scenario = window._SIM_SCENARIOS[window._simIdx % window._SIM_SCENARIOS.length];
+  window._simIdx++;
+  document.getElementById('simTitle').textContent = scenario.title;
+  document.getElementById('simMsg').innerHTML = scenario.msg.replace(/\n/g, '<br>');
+  const now = new Date();
+  const pst = new Date(now.toLocaleString('en-US', {timeZone: 'America/Los_Angeles'}));
+  const h = pst.getHours(), m = pst.getMinutes();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  document.getElementById('simTime').textContent = h12 + ':' + String(m).padStart(2,'0') + ' ' + ampm;
+  document.getElementById('simOverlay').style.display = 'flex';
+  window.playAlarmSound();
+};
+window.closeSimModal = function() {
+  document.getElementById('simOverlay').style.display = 'none';
+};
+window.playAlarmSound = function() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const notes = [880, 1046, 1318, 1046, 880];
+    let t = ctx.currentTime;
+    notes.forEach((freq) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t);
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.4, t + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + 0.35);
+      osc.start(t); osc.stop(t + 0.4);
+      t += 0.22;
+    });
+    setTimeout(() => {
+      try {
+        const ctx2 = new (window.AudioContext || window.webkitAudioContext)();
+        let t2 = ctx2.currentTime;
+        [880,1046,1318,1046,880].forEach((freq) => {
+          const o = ctx2.createOscillator(), g = ctx2.createGain();
+          o.connect(g); g.connect(ctx2.destination);
+          o.type = 'sine'; o.frequency.setValueAtTime(freq, t2);
+          g.gain.setValueAtTime(0, t2);
+          g.gain.linearRampToValueAtTime(0.4, t2+0.05);
+          g.gain.exponentialRampToValueAtTime(0.01, t2+0.35);
+          o.start(t2); o.stop(t2+0.4); t2 += 0.22;
+        });
+      } catch(e){}
+    }, 1300);
+  } catch(e){ console.log('Audio error:', e); }
+};
+window._simIdx = 0;
+window._SIM_SCENARIOS = [
+  { title: '🔔 NFP 비농업 고용 — 5분 전', msg: '5분 후 발표! 변동성 주의 ⚡\n\n예측: 140K  |  이전: 151K' },
+  { title: '🔔 CPI 소비자물가 — 1시간 전', msg: '1시간 후 발표! 포지션 확인하세요 📊\n\n예측: +0.3%  |  이전: +0.2%' },
+  { title: '🔔 FOMC 금리 결정 — 전날 알람', msg: '내일 오후 2:00 PM 발표 예정 📅\n\n현재 금리: 4.25~4.50%  동결 예상' },
+  { title: '🔔 PPI 생산자물가 — 5분 전', msg: '5분 후 발표! 인플레 선행지표 주의 🔥\n\n예측: +0.2%  |  이전: +0.1%' },
+  { title: '🔔 Michigan 기대인플레 — 5분 전', msg: '5분 후 발표! Fed 민감 반응 가능 ⚠️\n\n1년 예측: 4.9%  |  이전: 4.3%' },
+];
+
 // ===== PST Clock =====
 function updateClock() {
   const now = new Date();
@@ -640,13 +844,55 @@ function updateClock() {
   const s = String(pst.getSeconds()).padStart(2,'0');
   document.getElementById('clock').textContent = h + ':' + m + ':' + s;
   const days = ['일','월','화','수','목','금','토'];
-  const dateStr = (pst.getMonth()+1) + '월 ' + pst.getDate() + '일 (' + days[pst.getDay()] + ')';
+  const dateStr = (pst.getMonth()+1) + '/' + pst.getDate() + ' (' + days[pst.getDay()] + ')';
+  const hd = document.getElementById('header-date');
+  if (hd) hd.textContent = '2026.' + dateStr;
   const el = document.getElementById('today-date');
-  if (el) el.textContent = dateStr;
+  if (el) el.textContent = (pst.getMonth()+1) + '월 ' + pst.getDate() + '일 (' + days[pst.getDay()] + ')';
 }
 setInterval(updateClock, 1000);
 updateClock();
+updateAllIndicatorTimes();
+setInterval(updateAllIndicatorTimes, 60000);
 
+
+// ===== 폰 시간대 자동 변환 =====
+function convertPSTtoLocal(pstHour, pstMin) {
+  // PST = UTC-8, PDT = UTC-7
+  // Create a reference PST date to get offset
+  const now = new Date();
+  const pstRef = new Date(now.toLocaleString('en-US', {timeZone: 'America/Los_Angeles'}));
+  const utcRef = new Date(now.toLocaleString('en-US', {timeZone: 'UTC'}));
+  const pstOffsetHours = (utcRef - pstRef) / 3600000; // e.g. 8 for PST, 7 for PDT
+
+  // PST time → UTC minutes
+  const utcMinutes = pstHour * 60 + pstMin + pstOffsetHours * 60;
+
+  // UTC → local time
+  const localNow = new Date();
+  const localRef = new Date(localNow.toLocaleString('en-US', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone}));
+  const utcNow = new Date(localNow.toLocaleString('en-US', {timeZone: 'UTC'}));
+  const localOffsetHours = (localRef - utcNow) / 3600000;
+
+  const localMinutes = utcMinutes + localOffsetHours * 60;
+  let lh = Math.floor(localMinutes / 60) % 24;
+  if (lh < 0) lh += 24;
+  const lm = ((localMinutes % 60) + 60) % 60;
+  const ampm = lh >= 12 ? 'PM' : 'AM';
+  const h12 = lh % 12 || 12;
+
+  // Get timezone abbreviation
+  const tzName = Intl.DateTimeFormat('en-US', {timeZoneName: 'short'}).format(new Date()).split(' ').pop();
+  return `${String(h12).padStart(2,'0')}:${String(Math.round(lm)).padStart(2,'0')} ${ampm} (${tzName})`;
+}
+
+function updateAllIndicatorTimes() {
+  document.querySelectorAll('.ind-time[data-pst-hour]').forEach(el => {
+    const h = parseInt(el.dataset.pstHour);
+    const m = parseInt(el.dataset.pstMin);
+    el.textContent = convertPSTtoLocal(h, m);
+  });
+}
 // ===== Tab switch =====
 function switchTab(idx) {
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===idx));
@@ -654,7 +900,7 @@ function switchTab(idx) {
 }
 
 // ===== localStorage 저장/불러오기 =====
-const CARD_IDS = ['nfp','cpi','fomc','pce','gdp','jobless','ism','retail'];
+const CARD_IDS = ['nfp','cpi','fomc','pce','gdp','jobless','ism','retail','ppi','corecpi','mich1','mich5','ulc'];
 const ALARM_LABELS = ['전날 밤','1시간 전','5분 전'];
 
 function saveSettings() {
@@ -764,6 +1010,11 @@ const INDICATORS = [
   { id: 'jobless',name: '실업수당 청구건수',  dates: ['2026-04-02','2026-04-09','2026-04-16','2026-04-23'], pstHour: 5, pstMin: 30 },
   { id: 'ism',    name: 'ISM 제조업 PMI',     dates: ['2026-04-01'], pstHour: 7,  pstMin: 0  },
   { id: 'retail', name: '소매판매',           dates: ['2026-04-15'], pstHour: 5,  pstMin: 30 },
+  { id: 'ppi',    name: 'PPI 생산자물가',      dates: ['2026-04-11'], pstHour: 5,  pstMin: 30 },
+  { id: 'corecpi',name: 'Core CPI 핵심물가',   dates: ['2026-04-10'], pstHour: 5,  pstMin: 30 },
+  { id: 'mich1',  name: 'Michigan 1년 기대인플레', dates: ['2026-04-11','2026-04-25'], pstHour: 7, pstMin: 0 },
+  { id: 'mich5',  name: 'Michigan 5년 기대인플레', dates: ['2026-04-11','2026-04-25'], pstHour: 7, pstMin: 0 },
+  { id: 'ulc',    name: 'Unit Labor Costs',    dates: ['2026-05-07'], pstHour: 5,  pstMin: 30 },
 ];
 
 function getPSTDate(dateStr, hour, min) {
@@ -810,6 +1061,7 @@ function scheduleAlarms() {
   });
 }
 
+
 // ===== 초기화: 저장된 설정 불러오기 =====
 loadSettings();
 
@@ -821,5 +1073,28 @@ if (!('Notification' in window)) {
   document.getElementById('notif-banner').querySelector('p').textContent = '⚠ 이 브라우저는 알림 미지원. 크롬을 사용해주세요.';
 }
 </script>
+
+<!-- Simulation Modal -->
+<div class="sim-overlay" id="simOverlay" style="display:none" onclick="if(event.target===this)closeSimModal()">
+  <div class="sim-modal">
+    <div class="sim-header">
+      <div class="sim-app-icon">🇺🇸</div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--text)">US 경제지표 알람</div>
+        <div class="sim-app-name">지금 막 알림이 왔어요</div>
+      </div>
+      <div class="sim-time" id="simTime"></div>
+    </div>
+    <div class="sim-body">
+      <div class="sim-title" id="simTitle">🔔 NFP 비농업 고용 — 5분 전</div>
+      <div class="sim-msg" id="simMsg">5분 후 발표! 변동성 주의 ⚡<br><br>예측: 140K &nbsp;|&nbsp; 이전: 151K</div>
+      <div class="sim-actions">
+        <button class="sim-btn" onclick="closeSimModal()">닫기</button>
+        <button class="sim-btn primary" onclick="closeSimModal()">확인</button>
+      </div>
+      <button class="sim-close" onclick="closeSimModal()">▲ 알림 닫기</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
