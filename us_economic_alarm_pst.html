@@ -631,7 +631,7 @@
 </div>
 
 <script>
-// PST Clock
+// ===== PST Clock =====
 function updateClock() {
   const now = new Date();
   const pst = new Date(now.toLocaleString('en-US', {timeZone: 'America/Los_Angeles'}));
@@ -639,8 +639,6 @@ function updateClock() {
   const m = String(pst.getMinutes()).padStart(2,'0');
   const s = String(pst.getSeconds()).padStart(2,'0');
   document.getElementById('clock').textContent = h + ':' + m + ':' + s;
-
-  // Today date
   const days = ['일','월','화','수','목','금','토'];
   const dateStr = (pst.getMonth()+1) + '월 ' + pst.getDate() + '일 (' + days[pst.getDay()] + ')';
   const el = document.getElementById('today-date');
@@ -649,38 +647,70 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// Next alarm display
-function updateNextAlarm() {
-  const now = new Date();
-  const pst = new Date(now.toLocaleString('en-US', {timeZone: 'America/Los_Angeles'}));
-  const h = pst.getHours();
-  const m = pst.getMinutes();
-
-  let msg = '';
-  if (h < 4 || (h === 4 && m < 30)) {
-    msg = 'Core PCE 1시간 전 알람 → 오늘 04:30 AM PST';
-  } else if (h < 5 || (h === 5 && m < 25)) {
-    msg = 'Core PCE 5분 전 알람 → 오늘 05:25 AM PST';
-  } else {
-    msg = 'NFP 전날 알람 → 4월 3일 목 8:00 PM PST';
-  }
-  document.getElementById('next-alarm-text').textContent = msg;
-}
-updateNextAlarm();
-
-// Tab switch
+// ===== Tab switch =====
 function switchTab(idx) {
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===idx));
   document.querySelectorAll('.tab-pane').forEach((p,i) => p.classList.toggle('active', i===idx));
 }
 
-// Toggle alarm button
+// ===== localStorage 저장/불러오기 =====
+const CARD_IDS = ['nfp','cpi','fomc','pce','gdp','jobless','ism','retail'];
+const ALARM_LABELS = ['전날 밤','1시간 전','5분 전'];
+
+function saveSettings() {
+  const settings = {};
+  CARD_IDS.forEach(id => {
+    const card = document.getElementById('card-' + id);
+    if (!card) return;
+    const toggle = card.querySelector('input[type=checkbox]');
+    const btns = card.querySelectorAll('.alarm-btn');
+    settings[id] = {
+      enabled: toggle ? toggle.checked : false,
+      alarms: Array.from(btns).map(b => b.classList.contains('on'))
+    };
+  });
+  try { localStorage.setItem('us_alarm_settings', JSON.stringify(settings)); } catch(e) {}
+}
+
+function loadSettings() {
+  let settings = null;
+  try { settings = JSON.parse(localStorage.getItem('us_alarm_settings')); } catch(e) {}
+  if (!settings) return;
+
+  CARD_IDS.forEach(id => {
+    const card = document.getElementById('card-' + id);
+    if (!card || !settings[id]) return;
+    const s = settings[id];
+    const toggle = card.querySelector('input[type=checkbox]');
+    if (toggle) {
+      toggle.checked = s.enabled;
+      if (s.enabled) {
+        card.classList.add('active-card');
+        card.classList.remove('inactive');
+      } else {
+        card.classList.remove('active-card');
+        card.classList.add('inactive');
+      }
+    }
+    const btns = card.querySelectorAll('.alarm-btn');
+    btns.forEach((btn, i) => {
+      if (s.alarms && s.alarms[i]) {
+        btn.classList.add('on');
+      } else {
+        btn.classList.remove('on');
+      }
+    });
+  });
+}
+
+// ===== Toggle alarm button =====
 function toggleAlarm(btn) {
   btn.classList.toggle('on');
+  saveSettings();
   scheduleAlarms();
 }
 
-// Toggle card on/off
+// ===== Toggle card on/off =====
 function toggleCard(id, checked) {
   const card = document.getElementById('card-' + id);
   if (checked) {
@@ -690,17 +720,29 @@ function toggleCard(id, checked) {
     card.classList.remove('active-card');
     card.classList.add('inactive');
   }
+  saveSettings();
 }
 
-// Notification permission
+// ===== Next alarm bar =====
+function updateNextAlarm() {
+  const now = new Date();
+  const pst = new Date(now.toLocaleString('en-US', {timeZone: 'America/Los_Angeles'}));
+  const h = pst.getHours(), m = pst.getMinutes();
+  let msg = 'NFP 전날 알람 → 4월 3일 목 8:00 PM PST';
+  if (h < 4 || (h === 4 && m < 30)) msg = 'Core PCE 1시간 전 알람 → 오늘 04:30 AM PST';
+  else if (h < 5 || (h === 5 && m < 25)) msg = 'Core PCE 5분 전 알람 → 오늘 05:25 AM PST';
+  document.getElementById('next-alarm-text').textContent = msg;
+}
+updateNextAlarm();
+
+// ===== Notification permission =====
 function requestNotif() {
   if ('Notification' in window) {
     Notification.requestPermission().then(p => {
       if (p === 'granted') {
         document.getElementById('notif-banner').style.display = 'none';
         new Notification('🇺🇸 US 경제지표 알람', {
-          body: '알람이 설정되었습니다! LA 시간(PST) 기준으로 알려드릴게요.',
-          icon: ''
+          body: '알람 설정 완료! LA 시간(PST) 기준으로 알려드릴게요.',
         });
         scheduleAlarms();
       } else {
@@ -708,46 +750,52 @@ function requestNotif() {
       }
     });
   } else {
-    alert('이 브라우저는 알림을 지원하지 않아요. 삼성 인터넷 또는 크롬을 사용해주세요.');
+    alert('이 브라우저는 알림을 지원하지 않아요. 크롬을 사용해주세요.');
   }
 }
 
-// Alarm scheduling
+// ===== Alarm scheduling =====
 const INDICATORS = [
-  { name: 'NFP 비농업 고용', dates: ['2026-04-04'], pstHour: 5, pstMin: 30 },
-  { name: 'CPI 소비자물가', dates: ['2026-04-10'], pstHour: 5, pstMin: 30 },
-  { name: 'Core PCE 물가', dates: ['2026-03-28'], pstHour: 5, pstMin: 30 },
-  { name: 'FOMC 금리 결정', dates: ['2026-05-07'], pstHour: 14, pstMin: 0 },
-  { name: 'GDP Q1 예비치', dates: ['2026-04-30'], pstHour: 5, pstMin: 30 },
+  { id: 'nfp',    name: 'NFP 비농업 고용',   dates: ['2026-04-04'], pstHour: 5,  pstMin: 30 },
+  { id: 'cpi',    name: 'CPI 소비자물가',     dates: ['2026-04-10'], pstHour: 5,  pstMin: 30 },
+  { id: 'pce',    name: 'Core PCE 물가',      dates: ['2026-03-28'], pstHour: 5,  pstMin: 30 },
+  { id: 'fomc',   name: 'FOMC 금리 결정',     dates: ['2026-05-07'], pstHour: 14, pstMin: 0  },
+  { id: 'gdp',    name: 'GDP Q1 예비치',      dates: ['2026-04-30'], pstHour: 5,  pstMin: 30 },
+  { id: 'jobless',name: '실업수당 청구건수',  dates: ['2026-04-02','2026-04-09','2026-04-16','2026-04-23'], pstHour: 5, pstMin: 30 },
+  { id: 'ism',    name: 'ISM 제조업 PMI',     dates: ['2026-04-01'], pstHour: 7,  pstMin: 0  },
+  { id: 'retail', name: '소매판매',           dates: ['2026-04-15'], pstHour: 5,  pstMin: 30 },
 ];
 
 function getPSTDate(dateStr, hour, min) {
-  const d = new Date(dateStr + 'T' + String(hour).padStart(2,'0') + ':' + String(min).padStart(2,'0') + ':00-08:00');
-  return d;
+  return new Date(dateStr + 'T' + String(hour).padStart(2,'0') + ':' + String(min).padStart(2,'0') + ':00-07:00');
 }
 
 const alarmTimers = [];
 function scheduleAlarms() {
   alarmTimers.forEach(t => clearTimeout(t));
   alarmTimers.length = 0;
-
   if (Notification.permission !== 'granted') return;
 
   const now = Date.now();
   INDICATORS.forEach(ind => {
+    const card = document.getElementById('card-' + ind.id);
+    if (!card) return;
+    const toggle = card.querySelector('input[type=checkbox]');
+    if (!toggle || !toggle.checked) return;
+    const btns = card.querySelectorAll('.alarm-btn');
+    const alarmOffsets = [
+      { idx: 0, label: '전날 알람',  offset: 9 * 60 * 60 * 1000, msg: '내일 발표! 포지션 준비하세요' },
+      { idx: 1, label: '1시간 전',   offset: 60 * 60 * 1000,      msg: '1시간 후 발표! 포지션 확인하세요' },
+      { idx: 2, label: '5분 전',     offset: 5 * 60 * 1000,       msg: '5분 후 발표! 변동성 주의' },
+    ];
+
     ind.dates.forEach(dateStr => {
       const releaseTime = getPSTDate(dateStr, ind.pstHour, ind.pstMin).getTime();
-
-      const alarms = [
-        { label: '전날 알람', offset: 24 * 60 * 60 * 1000, msg: `내일 ${ind.pstHour > 12 ? ind.pstHour-12 : ind.pstHour}:${String(ind.pstMin).padStart(2,'0')} AM PST 발표 예정` },
-        { label: '1시간 전', offset: 60 * 60 * 1000, msg: `1시간 후 발표! 지금 포지션 확인하세요` },
-        { label: '5분 전', offset: 5 * 60 * 1000, msg: `5분 후 발표! 변동성 주의` },
-      ];
-
-      alarms.forEach(a => {
+      alarmOffsets.forEach(a => {
+        if (!btns[a.idx] || !btns[a.idx].classList.contains('on')) return;
         const triggerAt = releaseTime - a.offset;
         const delay = triggerAt - now;
-        if (delay > 0 && delay < 7 * 24 * 60 * 60 * 1000) {
+        if (delay > 0 && delay < 8 * 24 * 60 * 60 * 1000) {
           const t = setTimeout(() => {
             new Notification(`🔔 ${ind.name} ${a.label}`, {
               body: a.msg,
@@ -762,7 +810,9 @@ function scheduleAlarms() {
   });
 }
 
-// Check if banner needed
+// ===== 초기화: 저장된 설정 불러오기 =====
+loadSettings();
+
 if ('Notification' in window && Notification.permission === 'granted') {
   document.getElementById('notif-banner').style.display = 'none';
   scheduleAlarms();
