@@ -193,6 +193,17 @@
   .step-text { font-size: 13px; color: var(--text); line-height: 1.6; }
   .step-text strong { color: var(--accent); font-weight: 600; }
 
+
+  /* Sim Panel */
+  .sim-panel { background: var(--surface); border: 1px solid rgba(0,196,255,0.25); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+  .sim-panel-title { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+  .sound-options { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+  .sound-opt { padding: 9px 6px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-family: var(--mono); font-size: 12px; cursor: pointer; text-align: center; transition: all 0.15s; }
+  .sound-opt.active { background: rgba(0,102,255,0.15); border-color: var(--accent2); color: var(--accent); }
+  .sound-opt:active { transform: scale(0.96); }
+  .sim-trigger-btn { width: 100%; padding: 12px; border: 1px solid rgba(0,196,255,0.3); border-radius: 8px; background: rgba(0,196,255,0.08); color: var(--accent); font-family: var(--mono); font-size: 13px; font-weight: 600; cursor: pointer; letter-spacing: 0.3px; }
+  .sim-trigger-btn:active { transform: scale(0.98); background: rgba(0,196,255,0.15); }
+
   /* Simulation modal */
   .sim-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 999; display: flex; align-items: flex-start; justify-content: center; padding-top: 60px; }
   .sim-modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; width: 88%; max-width: 360px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
@@ -243,6 +254,19 @@
       <p>📵 알람을 받으려면 알림 권한이 필요해요</p>
       <button class="notif-btn" onclick="requestNotif()">허용하기</button>
     </div>
+
+    <!-- Sim + Sound Panel -->
+    <div class="sim-panel">
+      <div class="sim-panel-title">🔔 알람 시뮬레이션</div>
+      <div class="sound-options">
+        <button class="sound-opt active" id="sopt-beep" onclick="selectSound('beep', this)">🔊 비프음</button>
+        <button class="sound-opt" id="sopt-chime" onclick="selectSound('chime', this)">🎵 차임벨</button>
+        <button class="sound-opt" id="sopt-vibrate" onclick="selectSound('vibrate', this)">📳 진동만</button>
+        <button class="sound-opt" id="sopt-silent" onclick="selectSound('silent', this)">🔇 묵음</button>
+      </div>
+      <button class="sim-trigger-btn" onclick="openSimModal()">▶ 알람 테스트 실행</button>
+    </div>
+
 
     <div class="section-label">내가 선택한 지표 — 알람 시간 직접 설정</div>
 
@@ -429,9 +453,6 @@
         <button class="alarm-btn" onclick="toggleAlarm(this)">5분 전</button>
       </div>
     </div>
-
-    <div class="divider"></div>
-    <button class="sim-trigger-btn" onclick="openSimModal()">🔔 알람 시뮬레이션 테스트 (소리 포함)</button>
 
     <div class="section-label">🔥 인플레이션 관련 지표</div>
 
@@ -792,39 +813,74 @@ window.openSimModal = function() {
 window.closeSimModal = function() {
   document.getElementById('simOverlay').style.display = 'none';
 };
+window._soundMode = 'beep';
+
+window.selectSound = function(mode, btn) {
+  window._soundMode = mode;
+  document.querySelectorAll('.sound-opt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+};
+
+function playTone(ctx, freq, startTime, type='sine', vol=0.4) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, startTime);
+  gain.gain.setValueAtTime(0, startTime);
+  gain.gain.linearRampToValueAtTime(vol, startTime + 0.04);
+  gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.45);
+  osc.start(startTime); osc.stop(startTime + 0.5);
+}
+
 window.playAlarmSound = function() {
+  const mode = window._soundMode;
+  if (mode === 'silent') return;
+
+  if (mode === 'vibrate') {
+    if ('vibrate' in navigator) {
+      navigator.vibrate([300, 100, 300, 100, 500]);
+    } else {
+      alert('이 기기는 진동을 지원하지 않아요');
+    }
+    return;
+  }
+
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const notes = [880, 1046, 1318, 1046, 880];
-    let t = ctx.currentTime;
-    notes.forEach((freq) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, t);
-      gain.gain.setValueAtTime(0, t);
-      gain.gain.linearRampToValueAtTime(0.4, t + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.01, t + 0.35);
-      osc.start(t); osc.stop(t + 0.4);
-      t += 0.22;
-    });
-    setTimeout(() => {
-      try {
-        const ctx2 = new (window.AudioContext || window.webkitAudioContext)();
-        let t2 = ctx2.currentTime;
-        [880,1046,1318,1046,880].forEach((freq) => {
-          const o = ctx2.createOscillator(), g = ctx2.createGain();
-          o.connect(g); g.connect(ctx2.destination);
-          o.type = 'sine'; o.frequency.setValueAtTime(freq, t2);
-          g.gain.setValueAtTime(0, t2);
-          g.gain.linearRampToValueAtTime(0.4, t2+0.05);
-          g.gain.exponentialRampToValueAtTime(0.01, t2+0.35);
-          o.start(t2); o.stop(t2+0.4); t2 += 0.22;
-        });
-      } catch(e){}
-    }, 1300);
-  } catch(e){ console.log('Audio error:', e); }
+    let t = ctx.currentTime + 0.05;
+
+    if (mode === 'beep') {
+      // 경고음: 짧고 강한 비프
+      [880, 880, 1200].forEach((f, i) => {
+        playTone(ctx, f, t + i * 0.28, 'square', 0.35);
+      });
+      setTimeout(() => {
+        try {
+          const c2 = new (window.AudioContext || window.webkitAudioContext)();
+          let t2 = c2.currentTime + 0.05;
+          [880, 880, 1200].forEach((f, i) => playTone(c2, f, t2 + i * 0.28, 'square', 0.35));
+        } catch(e){}
+      }, 1000);
+    } else if (mode === 'chime') {
+      // 차임벨: 부드러운 멜로디
+      [523, 659, 784, 1047, 784, 659, 523].forEach((f, i) => {
+        playTone(ctx, f, t + i * 0.18, 'sine', 0.3);
+      });
+      setTimeout(() => {
+        try {
+          const c2 = new (window.AudioContext || window.webkitAudioContext)();
+          let t2 = c2.currentTime + 0.05;
+          [523, 659, 784, 1047, 784, 659, 523].forEach((f, i) => playTone(c2, f, t2 + i * 0.18, 'sine', 0.3));
+        } catch(e){}
+      }, 1600);
+    }
+
+    // 진동 함께
+    if ('vibrate' in navigator) {
+      navigator.vibrate([200, 100, 200]);
+    }
+  } catch(e) { console.log('Audio error:', e); }
 };
 window._simIdx = 0;
 window._SIM_SCENARIOS = [
