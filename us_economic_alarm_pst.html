@@ -1059,26 +1059,25 @@ function scheduleAlarms() {
 
 
 
-// ===== Trading Economics API =====
-const TE_API_KEY = '1900cba280684d4:h8rqwpq1ydci2q7';
+// ===== API Keys =====
+const FRED_KEY     = 'fdd98f87b3ae16454d6254fd63c04dbf';
+const FINNHUB_KEY  = 'd74arl9r01qno4q1325gd74arl9r01qno4q13260';
 
-// 관심 지표 키워드 (내가 설정한 카드들과 매칭)
+// 관심 지표 키워드
 const WATCHED_KEYWORDS = [
   'nonfarm','payroll','cpi','consumer price','pce','core pce',
   'fomc','federal funds','gdp','jobless claims','unemployment',
   'ism manufacturing','retail sales','ppi','producer price',
-  'michigan','inflation expectations','unit labor','emp cost'
+  'michigan','inflation','unit labor','employment cost'
 ];
 
 function matchesWatched(name) {
-  const n = name.toLowerCase();
-  return WATCHED_KEYWORDS.some(k => n.includes(k));
+  return WATCHED_KEYWORDS.some(k => (name||'').toLowerCase().includes(k));
 }
 
 function formatLocalTime(utcStr) {
-  // utcStr: "2026-04-04T13:30:00" (UTC)
   try {
-    const d = new Date(utcStr + (utcStr.includes('Z') ? '' : 'Z'));
+    const d = new Date(utcStr.includes('Z') ? utcStr : utcStr + 'Z');
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const local = new Date(d.toLocaleString('en-US', {timeZone: tz}));
     const h = local.getHours(), m = local.getMinutes();
@@ -1092,141 +1091,204 @@ function formatLocalTime(utcStr) {
 
 function getDayDiff(utcStr) {
   try {
-    const d = new Date(utcStr + (utcStr.includes('Z') ? '' : 'Z'));
-    const now = new Date();
-    const diffMs = d - now;
-    const diffDays = Math.ceil(diffMs / (1000*60*60*24));
-    return diffDays;
+    const d = new Date(utcStr.includes('Z') ? utcStr : utcStr + 'Z');
+    return Math.ceil((d - new Date()) / (1000*60*60*24));
   } catch(e) { return 999; }
 }
 
-function renderCalendar(data) {
-  const now = new Date();
-  const content = document.getElementById('cal-content');
-  if (!content) return;
+// FRED series IDs for latest actual values
+const FRED_SERIES = {
+  'nonfarm payrolls':         'PAYEMS',
+  'cpi':                      'CPIAUCSL',
+  'core cpi':                 'CPILFESL',
+  'pce':                      'PCEPI',
+  'core pce':                 'PCEPILFE',
+  'gdp':                      'GDP',
+  'initial jobless claims':   'IC4WSA',
+  'unemployment rate':        'UNRATE',
+  'retail sales':             'RSAFS',
+  'ppi':                      'PPIACO',
+  'michigan':                 'UMCSENT',
+  'unit labor costs':         'ULCNFB',
+};
 
-  // Filter: US only + importance ≥ 2 + upcoming 14 days + recent 3 days
-  const filtered = data.filter(ev => {
-    if (!ev.Date) return false;
-    const d = new Date((ev.Date + (ev.Date.includes('Z') ? '' : 'Z')));
-    const diffDays = (d - now) / (1000*60*60*24);
-    return diffDays > -3 && diffDays < 14 && (ev.Importance >= 2);
-  });
+function getFredSeriesId(eventName) {
+  const n = (eventName||'').toLowerCase();
+  for (const [key, id] of Object.entries(FRED_SERIES)) {
+    if (n.includes(key.split(' ')[0]) && n.includes(key.split(' ')[1]||key.split(' ')[0])) return id;
+    if (n.includes(key)) return id;
+  }
+  return null;
+}
+
+// Cache for FRED values
+const fredCache = {};
+
+async function fetchFredValue(seriesId) {
+  if (fredCache[seriesId]) return fredCache[seriesId];
+  try {
+    const url = `https://api.stlouisfed.org/fred/series/observations?series_id=${seriesId}&api_key=${FRED_KEY}&file_type=json&sort_order=desc&limit=2`;
+    const r = await fetch(url);
+    const d = await r.json();
+    if (d.observations && d.observations.length > 0) {
+      const latest = d.observations[0];
+      const prev   = d.observations[1];
+      const result = { value: latest.value, date: latest.date, prev: prev ? prev.value : null };
+      fredCache[seriesId] = result;
+      return result;
+    }
+  } catch(e) {}
+  return null;
+}
+
+function renderCalendar(events, fredData) {
+  const now = new Date();
+  const contentEl = document.getElementById('cal-content');
+  if (!contentEl) return;
+
+  const filtered = events
+    .filter(ev => {
+      if (!ev.time) return false;
+      const d = new Date(ev.time.includes('Z') ? ev.time : ev.time + 'Z');
+      const diff = (d - now) / (1000*60*60*24);
+      return diff > -4 && diff < 15;
+    })
+    .sort((a,b) => new Date(a.time) - new Date(b.time));
 
   if (filtered.length === 0) {
-    content.innerHTML = '<div style="text-align:center;padding:30px;font-family:var(--mono);font-size:12px;color:var(--text2);">이번 주 고중요도 지표가 없어요</div>';
-    document.getElementById('cal-content').style.display = 'block';
+    contentEl.innerHTML = '<div style="text-align:center;padding:30px;font-family:var(--mono);font-size:12px;color:var(--text2);">표시할 지표가 없어요</div>';
+    document.getElementById('cal-loading').style.display = 'none';
+    contentEl.style.display = 'block';
     return;
   }
 
-  // Sort by date
-  filtered.sort((a,b) => new Date(a.Date) - new Date(b.Date));
-
-  // Group: past / today / upcoming
   let html = '';
-  let shownPast = false, shownUpcoming = false, shownToday = false;
+  let shownPast = false, shownToday = false, shownFuture = false;
 
   filtered.forEach(ev => {
-    const d = new Date((ev.Date + (ev.Date.includes('Z') ? '' : 'Z')));
-    const diffDays = (d - now) / (1000*60*60*24);
-    const isPast = diffDays < -0.1;
-    const isToday = diffDays >= -0.1 && diffDays < 1;
-    const isFuture = diffDays >= 1;
+    const d = new Date(ev.time.includes('Z') ? ev.time : ev.time + 'Z');
+    const diff = (d - now) / (1000*60*60*24);
+    const isPast   = diff < -0.05;
+    const isToday  = diff >= -0.05 && diff < 0.95;
+    const isFuture = diff >= 0.95;
 
-    if (isPast && !shownPast) {
-      html += '<div class="section-label" style="margin-top:4px">최근 발표</div>';
-      shownPast = true;
-    }
-    if (isToday && !shownToday) {
-      html += '<div class="section-label" style="margin-top:4px">오늘</div>';
-      shownToday = true;
-    }
-    if (isFuture && !shownUpcoming) {
-      html += '<div class="section-label" style="margin-top:4px">예정</div>';
-      shownUpcoming = true;
-    }
+    if (isPast   && !shownPast)   { html += '<div class="section-label" style="margin-top:4px">📋 최근 발표</div>'; shownPast = true; }
+    if (isToday  && !shownToday)  { html += '<div class="section-label" style="margin-top:4px">📅 오늘</div>'; shownToday = true; }
+    if (isFuture && !shownFuture) { html += '<div class="section-label" style="margin-top:4px">🔜 예정</div>'; shownFuture = true; }
 
-    const isWatched = matchesWatched(ev.Event || '');
-    const imp = ev.Importance || 1;
-    const stars = '⭐'.repeat(Math.min(imp, 3));
-    const timeStr = formatLocalTime(ev.Date);
-    const diffD = getDayDiff(ev.Date);
+    const isWatched = matchesWatched(ev.event);
+    const timeStr   = formatLocalTime(ev.time);
+    const diffD     = getDayDiff(ev.time);
+    const iconClass = isPast ? 'icon-done' : isToday ? 'icon-today' : 'icon-soon';
+    const iconText  = isPast ? '✓' : '🔔';
+    let badgeClass  = 'badge-soon', badgeText = diffD > 0 ? `D-${diffD}` : `D+${Math.abs(diffD)}`;
+    if (isPast)  { badgeClass = 'badge-done';  badgeText = '완료'; }
+    if (isToday) { badgeClass = 'badge-today'; badgeText = 'D-DAY'; }
 
-    let badgeClass = 'badge-soon', badgeText = `D-${diffD}`;
-    if (isPast) { badgeClass = 'badge-done'; badgeText = '완료'; }
-    else if (isToday) { badgeClass = 'badge-today'; badgeText = 'D-DAY'; }
+    // FRED actual value
+    const seriesId = getFredSeriesId(ev.event);
+    let resultHtml = `<span class="upcoming-badge ${badgeClass}">${badgeText}</span>`;
 
-    let iconClass = isPast ? 'icon-done' : isToday ? 'icon-today' : 'icon-soon';
-    let iconText = isPast ? '✓' : '🔔';
-
-    // Actual vs Forecast
-    let resultHtml = '';
-    if (ev.Actual !== null && ev.Actual !== undefined && ev.Actual !== '') {
-      const actual = ev.Actual;
-      const forecast = ev.Forecast;
+    if (seriesId && fredData[seriesId]) {
+      const fd = fredData[seriesId];
+      const val = fd.value === '.' ? 'N/A' : fd.value;
+      const prev = fd.prev && fd.prev !== '.' ? fd.prev : null;
       let color = 'var(--text2)';
-      if (forecast !== null && forecast !== undefined && forecast !== '') {
-        color = parseFloat(actual) >= parseFloat(forecast) ? 'var(--success)' : 'var(--danger)';
+      if (prev && val !== 'N/A') {
+        color = parseFloat(val) >= parseFloat(prev) ? 'var(--success)' : 'var(--danger)';
       }
-      resultHtml = `<span style="font-family:var(--mono);font-size:11px;font-weight:600;color:${color}">${actual}${ev.Unit||''}</span>`;
-      if (forecast !== null && forecast !== undefined && forecast !== '') {
-        resultHtml += `<br><span style="font-family:var(--mono);font-size:10px;color:var(--text3)">예측 ${forecast}${ev.Unit||''}</span>`;
+      if (isPast || isToday) {
+        resultHtml = `<div style="text-align:right">
+          <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:${color}">${val}</span><br>
+          ${prev ? `<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">이전 ${prev}</span>` : ''}
+        </div>`;
       }
-    } else if (ev.Forecast !== null && ev.Forecast !== undefined && ev.Forecast !== '') {
-      resultHtml = `<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">예측<br>${ev.Forecast}${ev.Unit||''}</span>`;
     }
 
-    const watchedBorder = isWatched ? 'border-color:rgba(0,196,255,0.35);' : '';
+    // Estimate from Finnhub
+    if (ev.estimate !== null && ev.estimate !== undefined && ev.estimate !== '') {
+      const est = ev.estimate;
+      const act = ev.actual;
+      if (act !== null && act !== undefined && act !== '') {
+        const color = parseFloat(act) >= parseFloat(est) ? 'var(--success)' : 'var(--danger)';
+        resultHtml = `<div style="text-align:right">
+          <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:${color}">${act}</span><br>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">예측 ${est}</span>
+        </div>`;
+      } else {
+        resultHtml = `<div style="text-align:right">
+          <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">예측<br>${est}</span>
+        </div>`;
+      }
+    }
 
+    const border = isWatched ? 'border-color:rgba(0,196,255,0.4);' : '';
     html += `
-    <div class="upcoming-item${isToday?' today':''}" style="${watchedBorder}">
+    <div class="upcoming-item${isToday?' today':''}" style="${border}">
       <div class="upcoming-icon ${iconClass}" style="font-size:13px">${iconText}</div>
       <div class="upcoming-info">
-        <div class="upcoming-name">${isWatched ? '🔔 ' : ''}${ev.Event||''}${imp===3?' ⭐⭐⭐':imp===2?' ⭐⭐':''}</div>
+        <div class="upcoming-name">${isWatched?'🔔 ':''}${ev.event||''}</div>
         <div class="upcoming-time">${timeStr}</div>
       </div>
-      <div style="text-align:right;flex-shrink:0;min-width:60px">
-        ${resultHtml || `<span class="upcoming-badge ${badgeClass}">${badgeText}</span>`}
-      </div>
+      <div style="flex-shrink:0;min-width:64px;text-align:right">${resultHtml}</div>
     </div>`;
   });
 
-  content.innerHTML = html;
+  contentEl.innerHTML = html;
   document.getElementById('cal-loading').style.display = 'none';
-  document.getElementById('cal-content').style.display = 'block';
+  contentEl.style.display = 'block';
 }
 
 async function loadCalendar() {
   const loadingEl = document.getElementById('cal-loading');
-  const errorEl = document.getElementById('cal-error');
+  const errorEl   = document.getElementById('cal-error');
   const contentEl = document.getElementById('cal-content');
   if (!loadingEl) return;
 
   loadingEl.style.display = 'block';
-  loadingEl.textContent = '📡 실제 데이터 불러오는 중...';
+  loadingEl.textContent = '📡 Finnhub + FRED 데이터 불러오는 중...';
   if (errorEl) errorEl.style.display = 'none';
   if (contentEl) contentEl.style.display = 'none';
 
-  try {
-    // Get today and +14 days in YYYY-MM-DD
-    const now = new Date();
-    const from = new Date(now); from.setDate(from.getDate() - 3);
-    const to   = new Date(now); to.setDate(to.getDate() + 14);
-    const fmt = d => d.toISOString().split('T')[0];
+  const now  = new Date();
+  const from = new Date(now); from.setDate(from.getDate() - 4);
+  const to   = new Date(now); to.setDate(to.getDate() + 15);
+  const fmt  = d => d.toISOString().split('T')[0];
 
-    const url = `https://api.tradingeconomics.com/calendar/country/united%20states/${fmt(from)}/${fmt(to)}?c=${TE_API_KEY}&f=json`;
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`API 오류: ${resp.status}`);
-    const data = await resp.json();
-    if (!Array.isArray(data)) throw new Error('데이터 형식 오류');
-    renderCalendar(data);
+  try {
+    // 1. Finnhub Economic Calendar
+    const calUrl = `https://finnhub.io/api/v1/calendar/economic?from=${fmt(from)}&to=${fmt(to)}&token=${FINNHUB_KEY}`;
+    const calResp = await fetch(calUrl);
+    if (!calResp.ok) throw new Error(`Finnhub 오류: ${calResp.status}`);
+    const calData = await calResp.json();
+    const events = (calData.economicCalendar || []).filter(ev =>
+      (ev.country||'').toUpperCase() === 'US'
+    );
+
+    // 2. FRED - fetch latest values for watched series (parallel)
+    const seriesToFetch = [...new Set(
+      events.map(ev => getFredSeriesId(ev.event)).filter(Boolean)
+    )];
+    const fredData = {};
+    await Promise.allSettled(
+      seriesToFetch.map(async sid => {
+        const val = await fetchFredValue(sid);
+        if (val) fredData[sid] = val;
+      })
+    );
+
+    renderCalendar(events, fredData);
   } catch(e) {
     if (loadingEl) loadingEl.style.display = 'none';
     if (errorEl) {
       errorEl.style.display = 'block';
-      errorEl.textContent = `❌ ${e.message} — 새로고침 버튼을 눌러보세요`;
+      errorEl.innerHTML = `❌ ${e.message}<br><br>
+        <span style="font-size:11px;color:var(--text2)">
+        Finnhub: <code style="color:var(--warn)">${FINNHUB_KEY.substring(0,8)}...</code><br>
+        FRED: <code style="color:var(--warn)">${FRED_KEY.substring(0,8)}...</code>
+        </span>`;
     }
-    console.error('Calendar load error:', e);
+    console.error('loadCalendar error:', e);
   }
 }
 
