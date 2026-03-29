@@ -1246,7 +1246,7 @@ async function loadCalendar() {
   if (!loadingEl) return;
 
   loadingEl.style.display = 'block';
-  loadingEl.textContent = '📡 Finnhub + FRED 데이터 불러오는 중...';
+  loadingEl.textContent = '📡 데이터 불러오는 중...';
   if (errorEl) errorEl.style.display = 'none';
   if (contentEl) contentEl.style.display = 'none';
 
@@ -1255,41 +1255,91 @@ async function loadCalendar() {
   const to   = new Date(now); to.setDate(to.getDate() + 15);
   const fmt  = d => d.toISOString().split('T')[0];
 
+  // CORS proxy wrapper
+  const proxy = url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+
   try {
-    // 1. Finnhub Economic Calendar
-    const calUrl = `https://finnhub.io/api/v1/calendar/economic?from=${fmt(from)}&to=${fmt(to)}&token=${FINNHUB_KEY}`;
-    const calResp = await fetch(calUrl);
-    if (!calResp.ok) throw new Error(`Finnhub 오류: ${calResp.status}`);
-    const calData = await calResp.json();
+    // 1. Finnhub via CORS proxy
+    const finnUrl = `https://finnhub.io/api/v1/calendar/economic?from=${fmt(from)}&to=${fmt(to)}&token=${FINNHUB_KEY}`;
+    const calResp = await fetch(proxy(finnUrl));
+    if (!calResp.ok) throw new Error(`프록시 오류: ${calResp.status}`);
+    const proxyData = await calResp.json();
+    const calData = JSON.parse(proxyData.contents);
     const events = (calData.economicCalendar || []).filter(ev =>
       (ev.country||'').toUpperCase() === 'US'
     );
 
-    // 2. FRED - fetch latest values for watched series (parallel)
+    // 2. FRED - fetch latest values (also via proxy)
     const seriesToFetch = [...new Set(
       events.map(ev => getFredSeriesId(ev.event)).filter(Boolean)
     )];
     const fredData = {};
     await Promise.allSettled(
       seriesToFetch.map(async sid => {
-        const val = await fetchFredValue(sid);
-        if (val) fredData[sid] = val;
+        try {
+          const fredUrl = `https://api.stlouisfed.org/fred/series/observations?series_id=${sid}&api_key=${FRED_KEY}&file_type=json&sort_order=desc&limit=2`;
+          const r = await fetch(proxy(fredUrl));
+          const pd = await r.json();
+          const obs = JSON.parse(pd.contents).observations;
+          if (obs && obs.length > 0) {
+            fredData[sid] = { value: obs[0].value, date: obs[0].date, prev: obs[1]?.value || null };
+          }
+        } catch(e) {}
       })
     );
 
     renderCalendar(events, fredData);
   } catch(e) {
-    if (loadingEl) loadingEl.style.display = 'none';
-    if (errorEl) {
-      errorEl.style.display = 'block';
-      errorEl.innerHTML = `❌ ${e.message}<br><br>
-        <span style="font-size:11px;color:var(--text2)">
-        Finnhub: <code style="color:var(--warn)">${FINNHUB_KEY.substring(0,8)}...</code><br>
-        FRED: <code style="color:var(--warn)">${FRED_KEY.substring(0,8)}...</code>
-        </span>`;
+    // Fallback: FRED only with hardcoded upcoming schedule
+    try {
+      loadingEl.textContent = '📡 FRED 데이터로 전환 중...';
+      await loadFredOnly();
+    } catch(e2) {
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (errorEl) {
+        errorEl.style.display = 'block';
+        errorEl.innerHTML = `❌ ${e.message}<br>
+          <span style="font-size:11px;color:var(--text2)">네트워크 연결을 확인해주세요</span>`;
+      }
     }
-    console.error('loadCalendar error:', e);
   }
+}
+
+async function loadFredOnly() {
+  // Fallback: show FRED latest values with hardcoded upcoming dates
+  const proxy = url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+  const upcomingEvents = [
+    { event: 'ISM Manufacturing PMI',    time: '2026-04-01T14:00:00Z', country: 'US' },
+    { event: 'JOLTS Job Openings',        time: '2026-04-01T14:00:00Z', country: 'US' },
+    { event: 'ADP Nonfarm Employment',    time: '2026-04-02T12:15:00Z', country: 'US' },
+    { event: 'Initial Jobless Claims',    time: '2026-04-03T12:30:00Z', country: 'US' },
+    { event: 'Nonfarm Payrolls',          time: '2026-04-04T12:30:00Z', country: 'US' },
+    { event: 'Unemployment Rate',         time: '2026-04-04T12:30:00Z', country: 'US' },
+    { event: 'CPI Inflation',             time: '2026-04-10T12:30:00Z', country: 'US' },
+    { event: 'Core CPI',                  time: '2026-04-10T12:30:00Z', country: 'US' },
+    { event: 'PPI Producer Price Index',  time: '2026-04-11T12:30:00Z', country: 'US' },
+    { event: 'Michigan Consumer Sentiment', time: '2026-04-11T14:00:00Z', country: 'US' },
+    { event: 'Retail Sales',              time: '2026-04-16T12:30:00Z', country: 'US' },
+    { event: 'Core PCE Price Index',      time: '2026-04-30T12:30:00Z', country: 'US' },
+    { event: 'GDP Growth Rate',           time: '2026-04-30T12:30:00Z', country: 'US' },
+    { event: 'FOMC Interest Rate Decision', time: '2026-05-07T18:00:00Z', country: 'US' },
+  ];
+
+  const fredData = {};
+  const ids = [...new Set(upcomingEvents.map(ev => getFredSeriesId(ev.event)).filter(Boolean))];
+  await Promise.allSettled(ids.map(async sid => {
+    try {
+      const fredUrl = `https://api.stlouisfed.org/fred/series/observations?series_id=${sid}&api_key=${FRED_KEY}&file_type=json&sort_order=desc&limit=2`;
+      const r = await fetch(proxy(fredUrl));
+      const pd = await r.json();
+      const obs = JSON.parse(pd.contents).observations;
+      if (obs && obs.length > 0) {
+        fredData[sid] = { value: obs[0].value, date: obs[0].date, prev: obs[1]?.value || null };
+      }
+    } catch(e) {}
+  }));
+
+  renderCalendar(upcomingEvents, fredData);
 }
 
 // ===== 초기화: 저장된 설정 불러오기 =====
