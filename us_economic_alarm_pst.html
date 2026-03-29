@@ -575,78 +575,17 @@
     <button class="add-btn" onclick="alert('더 추가하고 싶은 지표를 Claude에게 말씀해주세요!')">+ 지표 추가 요청하기</button>
   </div>
 
-  <!-- TAB 1: 예정 알람 -->
+  <!-- TAB 1: 예정 알람 — Trading Economics API 실시간 -->
   <div class="tab-pane" id="tab1">
-    <div class="section-label">오늘 · <span id="today-date"></span> (PST)</div>
-
-    <div class="upcoming-item today">
-      <div class="upcoming-icon icon-today">⏰</div>
-      <div class="upcoming-info">
-        <div class="upcoming-name">Core PCE 물가 발표</div>
-        <div class="upcoming-time">오늘 05:30 AM PST — 1시간 전 알람 04:30 AM</div>
-      </div>
-      <span class="upcoming-badge badge-today">D-DAY</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div class="section-label" style="margin-bottom:0">실제 미국 경제지표 · <span id="today-date"></span></div>
+      <button onclick="loadCalendar()" style="font-family:var(--mono);font-size:10px;padding:4px 10px;border:0.5px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text2);cursor:pointer;">↻ 새로고침</button>
     </div>
-
-    <div class="upcoming-item today">
-      <div class="upcoming-icon icon-today">⏰</div>
-      <div class="upcoming-info">
-        <div class="upcoming-name">Core PCE 물가 발표</div>
-        <div class="upcoming-time">오늘 05:30 AM PST — 5분 전 알람 05:25 AM</div>
-      </div>
-      <span class="upcoming-badge badge-today">D-DAY</span>
+    <div id="cal-loading" style="text-align:center;padding:30px;font-family:var(--mono);font-size:12px;color:var(--text2);">
+      📡 investing.com 데이터 불러오는 중...
     </div>
-
-    <div class="divider"></div>
-    <div class="section-label">이번 주</div>
-
-    <div class="upcoming-item">
-      <div class="upcoming-icon icon-soon">🔔</div>
-      <div class="upcoming-info">
-        <div class="upcoming-name">NFP 비농업 고용 — 전날 알람</div>
-        <div class="upcoming-time">4월 3일 목 · 저녁 8:00 PM PST</div>
-      </div>
-      <span class="upcoming-badge badge-soon">D-7</span>
-    </div>
-
-    <div class="upcoming-item">
-      <div class="upcoming-icon icon-soon">🔔</div>
-      <div class="upcoming-info">
-        <div class="upcoming-name">NFP 비농업 고용 — 1시간 전</div>
-        <div class="upcoming-time">4월 4일 금 · 04:30 AM PST</div>
-      </div>
-      <span class="upcoming-badge badge-soon">D-8</span>
-    </div>
-
-    <div class="upcoming-item">
-      <div class="upcoming-icon icon-soon">🔔</div>
-      <div class="upcoming-info">
-        <div class="upcoming-name">NFP 비농업 고용 — 5분 전</div>
-        <div class="upcoming-time">4월 4일 금 · 05:25 AM PST</div>
-      </div>
-      <span class="upcoming-badge badge-soon">D-8</span>
-    </div>
-
-    <div class="divider"></div>
-    <div class="section-label">최근 발표됨</div>
-
-    <div class="upcoming-item">
-      <div class="upcoming-icon icon-done">✓</div>
-      <div class="upcoming-info">
-        <div class="upcoming-name">Initial Jobless Claims</div>
-        <div class="upcoming-time">어제 05:30 AM PST — 실제: 210K (예측: 211K)</div>
-      </div>
-      <span class="upcoming-badge badge-done">완료</span>
-    </div>
-
-    <div class="upcoming-item">
-      <div class="upcoming-icon icon-done">✓</div>
-      <div class="upcoming-info">
-        <div class="upcoming-name">GDP Q4 확정치</div>
-        <div class="upcoming-time">3월 26일 05:30 AM PST — 실제: 2.4%</div>
-      </div>
-      <span class="upcoming-badge badge-done">완료</span>
-    </div>
+    <div id="cal-error" style="display:none;background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.2);border-radius:8px;padding:12px;font-size:12px;color:var(--danger);font-family:var(--mono);margin-bottom:10px;"></div>
+    <div id="cal-content" style="display:none;"></div>
   </div>
 
   <!-- TAB 2: 캘린더 -->
@@ -953,6 +892,7 @@ function updateAllIndicatorTimes() {
 function switchTab(idx) {
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===idx));
   document.querySelectorAll('.tab-pane').forEach((p,i) => p.classList.toggle('active', i===idx));
+  if (idx === 1) loadCalendar();
 }
 
 // ===== localStorage 저장/불러오기 =====
@@ -1117,6 +1057,178 @@ function scheduleAlarms() {
   });
 }
 
+
+
+// ===== Trading Economics API =====
+const TE_API_KEY = '1900cba280684d4:h8rqwpq1ydci2q7';
+
+// 관심 지표 키워드 (내가 설정한 카드들과 매칭)
+const WATCHED_KEYWORDS = [
+  'nonfarm','payroll','cpi','consumer price','pce','core pce',
+  'fomc','federal funds','gdp','jobless claims','unemployment',
+  'ism manufacturing','retail sales','ppi','producer price',
+  'michigan','inflation expectations','unit labor','emp cost'
+];
+
+function matchesWatched(name) {
+  const n = name.toLowerCase();
+  return WATCHED_KEYWORDS.some(k => n.includes(k));
+}
+
+function formatLocalTime(utcStr) {
+  // utcStr: "2026-04-04T13:30:00" (UTC)
+  try {
+    const d = new Date(utcStr + (utcStr.includes('Z') ? '' : 'Z'));
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const local = new Date(d.toLocaleString('en-US', {timeZone: tz}));
+    const h = local.getHours(), m = local.getMinutes();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    const tzName = Intl.DateTimeFormat('en-US',{timeZoneName:'short'}).format(d).split(' ').pop();
+    const days = ['일','월','화','수','목','금','토'];
+    return `${local.getMonth()+1}/${local.getDate()}(${days[local.getDay()]}) ${String(h12).padStart(2,'0')}:${String(m).padStart(2,'0')} ${ampm} ${tzName}`;
+  } catch(e) { return utcStr; }
+}
+
+function getDayDiff(utcStr) {
+  try {
+    const d = new Date(utcStr + (utcStr.includes('Z') ? '' : 'Z'));
+    const now = new Date();
+    const diffMs = d - now;
+    const diffDays = Math.ceil(diffMs / (1000*60*60*24));
+    return diffDays;
+  } catch(e) { return 999; }
+}
+
+function renderCalendar(data) {
+  const now = new Date();
+  const content = document.getElementById('cal-content');
+  if (!content) return;
+
+  // Filter: US only + importance ≥ 2 + upcoming 14 days + recent 3 days
+  const filtered = data.filter(ev => {
+    if (!ev.Date) return false;
+    const d = new Date((ev.Date + (ev.Date.includes('Z') ? '' : 'Z')));
+    const diffDays = (d - now) / (1000*60*60*24);
+    return diffDays > -3 && diffDays < 14 && (ev.Importance >= 2);
+  });
+
+  if (filtered.length === 0) {
+    content.innerHTML = '<div style="text-align:center;padding:30px;font-family:var(--mono);font-size:12px;color:var(--text2);">이번 주 고중요도 지표가 없어요</div>';
+    document.getElementById('cal-content').style.display = 'block';
+    return;
+  }
+
+  // Sort by date
+  filtered.sort((a,b) => new Date(a.Date) - new Date(b.Date));
+
+  // Group: past / today / upcoming
+  let html = '';
+  let shownPast = false, shownUpcoming = false, shownToday = false;
+
+  filtered.forEach(ev => {
+    const d = new Date((ev.Date + (ev.Date.includes('Z') ? '' : 'Z')));
+    const diffDays = (d - now) / (1000*60*60*24);
+    const isPast = diffDays < -0.1;
+    const isToday = diffDays >= -0.1 && diffDays < 1;
+    const isFuture = diffDays >= 1;
+
+    if (isPast && !shownPast) {
+      html += '<div class="section-label" style="margin-top:4px">최근 발표</div>';
+      shownPast = true;
+    }
+    if (isToday && !shownToday) {
+      html += '<div class="section-label" style="margin-top:4px">오늘</div>';
+      shownToday = true;
+    }
+    if (isFuture && !shownUpcoming) {
+      html += '<div class="section-label" style="margin-top:4px">예정</div>';
+      shownUpcoming = true;
+    }
+
+    const isWatched = matchesWatched(ev.Event || '');
+    const imp = ev.Importance || 1;
+    const stars = '⭐'.repeat(Math.min(imp, 3));
+    const timeStr = formatLocalTime(ev.Date);
+    const diffD = getDayDiff(ev.Date);
+
+    let badgeClass = 'badge-soon', badgeText = `D-${diffD}`;
+    if (isPast) { badgeClass = 'badge-done'; badgeText = '완료'; }
+    else if (isToday) { badgeClass = 'badge-today'; badgeText = 'D-DAY'; }
+
+    let iconClass = isPast ? 'icon-done' : isToday ? 'icon-today' : 'icon-soon';
+    let iconText = isPast ? '✓' : '🔔';
+
+    // Actual vs Forecast
+    let resultHtml = '';
+    if (ev.Actual !== null && ev.Actual !== undefined && ev.Actual !== '') {
+      const actual = ev.Actual;
+      const forecast = ev.Forecast;
+      let color = 'var(--text2)';
+      if (forecast !== null && forecast !== undefined && forecast !== '') {
+        color = parseFloat(actual) >= parseFloat(forecast) ? 'var(--success)' : 'var(--danger)';
+      }
+      resultHtml = `<span style="font-family:var(--mono);font-size:11px;font-weight:600;color:${color}">${actual}${ev.Unit||''}</span>`;
+      if (forecast !== null && forecast !== undefined && forecast !== '') {
+        resultHtml += `<br><span style="font-family:var(--mono);font-size:10px;color:var(--text3)">예측 ${forecast}${ev.Unit||''}</span>`;
+      }
+    } else if (ev.Forecast !== null && ev.Forecast !== undefined && ev.Forecast !== '') {
+      resultHtml = `<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">예측<br>${ev.Forecast}${ev.Unit||''}</span>`;
+    }
+
+    const watchedBorder = isWatched ? 'border-color:rgba(0,196,255,0.35);' : '';
+
+    html += `
+    <div class="upcoming-item${isToday?' today':''}" style="${watchedBorder}">
+      <div class="upcoming-icon ${iconClass}" style="font-size:13px">${iconText}</div>
+      <div class="upcoming-info">
+        <div class="upcoming-name">${isWatched ? '🔔 ' : ''}${ev.Event||''}${imp===3?' ⭐⭐⭐':imp===2?' ⭐⭐':''}</div>
+        <div class="upcoming-time">${timeStr}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;min-width:60px">
+        ${resultHtml || `<span class="upcoming-badge ${badgeClass}">${badgeText}</span>`}
+      </div>
+    </div>`;
+  });
+
+  content.innerHTML = html;
+  document.getElementById('cal-loading').style.display = 'none';
+  document.getElementById('cal-content').style.display = 'block';
+}
+
+async function loadCalendar() {
+  const loadingEl = document.getElementById('cal-loading');
+  const errorEl = document.getElementById('cal-error');
+  const contentEl = document.getElementById('cal-content');
+  if (!loadingEl) return;
+
+  loadingEl.style.display = 'block';
+  loadingEl.textContent = '📡 실제 데이터 불러오는 중...';
+  if (errorEl) errorEl.style.display = 'none';
+  if (contentEl) contentEl.style.display = 'none';
+
+  try {
+    // Get today and +14 days in YYYY-MM-DD
+    const now = new Date();
+    const from = new Date(now); from.setDate(from.getDate() - 3);
+    const to   = new Date(now); to.setDate(to.getDate() + 14);
+    const fmt = d => d.toISOString().split('T')[0];
+
+    const url = `https://api.tradingeconomics.com/calendar/country/united%20states/${fmt(from)}/${fmt(to)}?c=${TE_API_KEY}&f=json`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`API 오류: ${resp.status}`);
+    const data = await resp.json();
+    if (!Array.isArray(data)) throw new Error('데이터 형식 오류');
+    renderCalendar(data);
+  } catch(e) {
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = `❌ ${e.message} — 새로고침 버튼을 눌러보세요`;
+    }
+    console.error('Calendar load error:', e);
+  }
+}
 
 // ===== 초기화: 저장된 설정 불러오기 =====
 loadSettings();
