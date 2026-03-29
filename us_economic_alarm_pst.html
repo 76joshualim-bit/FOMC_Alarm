@@ -1148,12 +1148,17 @@ function renderCalendar(events, fredData) {
 
   const filtered = events
     .filter(ev => {
-      if (!ev.time) return false;
-      const d = new Date(ev.time.includes('Z') ? ev.time : ev.time + 'Z');
+      const t = ev.time || ev.Date || ev.date || '';
+      if (!t) return false;
+      const d = new Date(t.includes('Z') ? t : t + 'Z');
       const diff = (d - now) / (1000*60*60*24);
-      return diff > -4 && diff < 15;
+      return diff > -5 && diff < 32;
     })
-    .sort((a,b) => new Date(a.time) - new Date(b.time));
+    .sort((a,b) => {
+      const ta = a.time||a.Date||a.date||'';
+      const tb = b.time||b.Date||b.date||'';
+      return new Date(ta) - new Date(tb);
+    });
 
   if (filtered.length === 0) {
     contentEl.innerHTML = '<div style="text-align:center;padding:30px;font-family:var(--mono);font-size:12px;color:var(--text2);">표시할 지표가 없어요</div>';
@@ -1166,7 +1171,7 @@ function renderCalendar(events, fredData) {
   let shownPast = false, shownToday = false, shownFuture = false;
 
   filtered.forEach(ev => {
-    const d = new Date(ev.time.includes('Z') ? ev.time : ev.time + 'Z');
+    const d = new Date((ev.time||ev.Date||ev.date||'').includes('Z') ? (ev.time||ev.Date||ev.date||'') : (ev.time||ev.Date||ev.date||'')+'Z');
     const diff = (d - now) / (1000*60*60*24);
     const isPast   = diff < -0.05;
     const isToday  = diff >= -0.05 && diff < 0.95;
@@ -1227,7 +1232,7 @@ function renderCalendar(events, fredData) {
     <div class="upcoming-item${isToday?' today':''}" style="${border}">
       <div class="upcoming-icon ${iconClass}" style="font-size:13px">${iconText}</div>
       <div class="upcoming-info">
-        <div class="upcoming-name">${isWatched?'🔔 ':''}${ev.event||''}</div>
+        <div class="upcoming-name">${isWatched?'🔔 ':''}${ev.event||ev.Event||ev.name||''}</div>
         <div class="upcoming-time">${timeStr}</div>
       </div>
       <div style="flex-shrink:0;min-width:64px;text-align:right">${resultHtml}</div>
@@ -1252,45 +1257,75 @@ async function loadCalendar() {
 
   const now  = new Date();
   const from = new Date(now); from.setDate(from.getDate() - 4);
-  const to   = new Date(now); to.setDate(to.getDate() + 15);
+  const to   = new Date(now); to.setDate(to.getDate() + 30);
   const fmt  = d => d.toISOString().split('T')[0];
-
-  // CORS proxy wrapper
   const proxy = url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
 
   try {
-    // 1. Finnhub via CORS proxy
+    // Finnhub via CORS proxy
     const finnUrl = `https://finnhub.io/api/v1/calendar/economic?from=${fmt(from)}&to=${fmt(to)}&token=${FINNHUB_KEY}`;
     const calResp = await fetch(proxy(finnUrl));
     if (!calResp.ok) throw new Error(`프록시 오류: ${calResp.status}`);
     const proxyData = await calResp.json();
-    const calData = JSON.parse(proxyData.contents);
-    const events = (calData.economicCalendar || []).filter(ev =>
-      (ev.country||'').toUpperCase() === 'US'
-    );
+    const calData   = JSON.parse(proxyData.contents);
 
-    // 2. FRED - fetch latest values (also via proxy)
-    const seriesToFetch = [...new Set(
-      events.map(ev => getFredSeriesId(ev.event)).filter(Boolean)
-    )];
+    // Debug: show raw response info
+    const allEvents = calData.economicCalendar || calData || [];
+    console.log('Finnhub raw keys:', Object.keys(calData));
+    console.log('Total events:', allEvents.length);
+    console.log('Sample:', JSON.stringify(allEvents.slice(0,2)));
+
+    // Try both US and united states filter
+    const events = Array.isArray(allEvents) ? allEvents.filter(ev => {
+      const c = (ev.country || ev.Country || '').toUpperCase();
+      return c === 'US' || c === 'UNITED STATES' || c === 'USA';
+    }) : [];
+
+    console.log('US events:', events.length);
+
+    // If still empty, show all events as debug
+    if (events.length === 0 && allEvents.length > 0) {
+      // Show raw data in error box for debugging
+      if (errorEl) {
+        errorEl.style.display = 'block';
+        errorEl.style.background = 'rgba(0,196,255,0.05)';
+        errorEl.style.borderColor = 'rgba(0,196,255,0.2)';
+        errorEl.style.color = 'var(--text2)';
+        const sample = allEvents.slice(0,3).map(e => 
+          `${e.event||e.Event||'?'} | ${e.country||e.Country||'?'} | ${e.time||e.Date||'?'}`
+        ).join('<br>');
+        errorEl.innerHTML = `⚠ Finnhub 응답 수신됨 (${allEvents.length}개)<br>샘플:<br>${sample}<br><br>국가 필드명 확인 중...`;
+      }
+      // Try with any country field
+      const allCountries = [...new Set(allEvents.map(e => e.country||e.Country||'').filter(Boolean))];
+      console.log('Countries found:', allCountries.slice(0,10));
+    }
+
+    // FRED values
     const fredData = {};
-    await Promise.allSettled(
-      seriesToFetch.map(async sid => {
-        try {
-          const fredUrl = `https://api.stlouisfed.org/fred/series/observations?series_id=${sid}&api_key=${FRED_KEY}&file_type=json&sort_order=desc&limit=2`;
-          const r = await fetch(proxy(fredUrl));
-          const pd = await r.json();
-          const obs = JSON.parse(pd.contents).observations;
-          if (obs && obs.length > 0) {
-            fredData[sid] = { value: obs[0].value, date: obs[0].date, prev: obs[1]?.value || null };
-          }
-        } catch(e) {}
-      })
-    );
+    const ids = [...new Set(events.map(ev => getFredSeriesId(ev.event || ev.Event || '')).filter(Boolean))];
+    await Promise.allSettled(ids.map(async sid => {
+      try {
+        const fredUrl = `https://api.stlouisfed.org/fred/series/observations?series_id=${sid}&api_key=${FRED_KEY}&file_type=json&sort_order=desc&limit=2`;
+        const r  = await fetch(proxy(fredUrl));
+        const pd = await r.json();
+        const obs = JSON.parse(pd.contents).observations;
+        if (obs && obs.length > 0) {
+          fredData[sid] = { value: obs[0].value, date: obs[0].date, prev: obs[1]?.value||null };
+        }
+      } catch(e) {}
+    }));
 
-    renderCalendar(events, fredData);
+    if (events.length > 0) {
+      if (errorEl) errorEl.style.display = 'none';
+      renderCalendar(events, fredData);
+    } else {
+      // Fallback to hardcoded schedule + FRED
+      await loadFredOnly();
+    }
+
   } catch(e) {
-    // Fallback: FRED only with hardcoded upcoming schedule
+    console.error('loadCalendar error:', e);
     try {
       loadingEl.textContent = '📡 FRED 데이터로 전환 중...';
       await loadFredOnly();
@@ -1298,8 +1333,7 @@ async function loadCalendar() {
       if (loadingEl) loadingEl.style.display = 'none';
       if (errorEl) {
         errorEl.style.display = 'block';
-        errorEl.innerHTML = `❌ ${e.message}<br>
-          <span style="font-size:11px;color:var(--text2)">네트워크 연결을 확인해주세요</span>`;
+        errorEl.innerHTML = `❌ ${e.message}`;
       }
     }
   }
