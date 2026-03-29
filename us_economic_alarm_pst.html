@@ -380,7 +380,7 @@
       </div>
       <div class="alarm-row">
         <button class="alarm-btn on" onclick="toggleAlarm(this)">전날 밤</button>
-        <button class="alarm-btn" onclick="toggleAlarm(this)">1시간 전</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">1시간 전</button>
         <button class="alarm-btn on" onclick="toggleAlarm(this)">5분 전</button>
       </div>
     </div>
@@ -396,20 +396,20 @@
           <div class="ind-sub">매주 목요일</div>
           <span class="ind-time" data-pst-hour="5" data-pst-min="30">--:-- --</span>
           <div class="toggle-wrap"><label class="toggle">
-            <input type="checkbox" onchange="toggleCard('jobless', this.checked)">
+            <input type="checkbox" checked onchange="toggleCard('jobless', this.checked)">
             <span class="toggle-track"></span>
           </label></div>
         </div>
       </div>
       <div class="alarm-row">
-        <button class="alarm-btn" onclick="toggleAlarm(this)">전날 밤</button>
-        <button class="alarm-btn" onclick="toggleAlarm(this)">1시간 전</button>
-        <button class="alarm-btn" onclick="toggleAlarm(this)">5분 전</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">전날 밤</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">1시간 전</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">5분 전</button>
       </div>
     </div>
 
     <!-- ISM Manufacturing -->
-    <div class="ind-card" id="card-ism">
+    <div class="ind-card active-card" id="card-ism">
       <div class="ind-top">
         <div class="ind-left">
           <div class="stars">⭐⭐</div>
@@ -419,20 +419,20 @@
           <div class="ind-sub">매월 첫째 영업일</div>
           <span class="ind-time" data-pst-hour="7" data-pst-min="0">--:-- --</span>
           <div class="toggle-wrap"><label class="toggle">
-            <input type="checkbox" onchange="toggleCard('ism', this.checked)">
+            <input type="checkbox" checked onchange="toggleCard('ism', this.checked)">
             <span class="toggle-track"></span>
           </label></div>
         </div>
       </div>
       <div class="alarm-row">
-        <button class="alarm-btn" onclick="toggleAlarm(this)">전날 밤</button>
-        <button class="alarm-btn" onclick="toggleAlarm(this)">1시간 전</button>
-        <button class="alarm-btn" onclick="toggleAlarm(this)">5분 전</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">전날 밤</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">1시간 전</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">5분 전</button>
       </div>
     </div>
 
     <!-- Retail Sales -->
-    <div class="ind-card" id="card-retail">
+    <div class="ind-card active-card" id="card-retail">
       <div class="ind-top">
         <div class="ind-left">
           <div class="stars">⭐⭐⭐</div>
@@ -442,22 +442,22 @@
           <div class="ind-sub">매월 중순</div>
           <span class="ind-time" data-pst-hour="5" data-pst-min="30">--:-- --</span>
           <div class="toggle-wrap"><label class="toggle">
-            <input type="checkbox" onchange="toggleCard('retail', this.checked)">
+            <input type="checkbox" checked onchange="toggleCard('retail', this.checked)">
             <span class="toggle-track"></span>
           </label></div>
         </div>
       </div>
       <div class="alarm-row">
-        <button class="alarm-btn" onclick="toggleAlarm(this)">전날 밤</button>
-        <button class="alarm-btn" onclick="toggleAlarm(this)">1시간 전</button>
-        <button class="alarm-btn" onclick="toggleAlarm(this)">5분 전</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">전날 밤</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">1시간 전</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">5분 전</button>
       </div>
     </div>
 
     <div class="section-label">🔥 인플레이션 관련 지표</div>
 
     <!-- PPI -->
-    <div class="ind-card" id="card-ppi">
+    <div class="ind-card active-card" id="card-ppi">
       <div class="ind-top">
         <div class="ind-left">
           <div class="stars">⭐⭐⭐</div>
@@ -467,20 +467,20 @@
           <div class="ind-sub">매월 중순 · CPI 선행지표</div>
           <span class="ind-time" data-pst-hour="5" data-pst-min="30">--:-- --</span>
           <div class="toggle-wrap"><label class="toggle">
-            <input type="checkbox" onchange="toggleCard('ppi', this.checked)">
+            <input type="checkbox" checked onchange="toggleCard('ppi', this.checked)">
             <span class="toggle-track"></span>
           </label></div>
         </div>
       </div>
       <div class="alarm-row">
-        <button class="alarm-btn" onclick="toggleAlarm(this)">전날 밤</button>
-        <button class="alarm-btn" onclick="toggleAlarm(this)">1시간 전</button>
-        <button class="alarm-btn" onclick="toggleAlarm(this)">5분 전</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">전날 밤</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">1시간 전</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">5분 전</button>
       </div>
     </div>
 
     <!-- Core CPI -->
-    <div class="ind-card" id="card-corecpi">
+    <div class="ind-card active-card" id="card-corecpi">
       <div class="ind-top">
         <div class="ind-left">
           <div class="stars">⭐⭐⭐</div>
@@ -490,20 +490,20 @@
           <div class="ind-sub">매월 · 식품·에너지 제외</div>
           <span class="ind-time" data-pst-hour="5" data-pst-min="30">--:-- --</span>
           <div class="toggle-wrap"><label class="toggle">
-            <input type="checkbox" onchange="toggleCard('corecpi', this.checked)">
+            <input type="checkbox" checked onchange="toggleCard('corecpi', this.checked)">
             <span class="toggle-track"></span>
           </label></div>
         </div>
       </div>
       <div class="alarm-row">
-        <button class="alarm-btn" onclick="toggleAlarm(this)">전날 밤</button>
-        <button class="alarm-btn" onclick="toggleAlarm(this)">1시간 전</button>
-        <button class="alarm-btn" onclick="toggleAlarm(this)">5분 전</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">전날 밤</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">1시간 전</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">5분 전</button>
       </div>
     </div>
 
     <!-- Michigan 1년 기대인플레 -->
-    <div class="ind-card" id="card-mich1">
+    <div class="ind-card active-card" id="card-mich1">
       <div class="ind-top">
         <div class="ind-left">
           <div class="stars">⭐⭐⭐</div>
@@ -513,20 +513,20 @@
           <div class="ind-sub">매월 예비·확정치</div>
           <span class="ind-time" data-pst-hour="7" data-pst-min="0">--:-- --</span>
           <div class="toggle-wrap"><label class="toggle">
-            <input type="checkbox" onchange="toggleCard('mich1', this.checked)">
+            <input type="checkbox" checked onchange="toggleCard('mich1', this.checked)">
             <span class="toggle-track"></span>
           </label></div>
         </div>
       </div>
       <div class="alarm-row">
-        <button class="alarm-btn" onclick="toggleAlarm(this)">전날 밤</button>
-        <button class="alarm-btn" onclick="toggleAlarm(this)">1시간 전</button>
-        <button class="alarm-btn" onclick="toggleAlarm(this)">5분 전</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">전날 밤</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">1시간 전</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">5분 전</button>
       </div>
     </div>
 
     <!-- Michigan 5년 기대인플레 -->
-    <div class="ind-card" id="card-mich5">
+    <div class="ind-card active-card" id="card-mich5">
       <div class="ind-top">
         <div class="ind-left">
           <div class="stars">⭐⭐⭐</div>
@@ -536,20 +536,20 @@
           <div class="ind-sub">매월 · Fed 장기 인플레 기대</div>
           <span class="ind-time" data-pst-hour="7" data-pst-min="0">--:-- --</span>
           <div class="toggle-wrap"><label class="toggle">
-            <input type="checkbox" onchange="toggleCard('mich5', this.checked)">
+            <input type="checkbox" checked onchange="toggleCard('mich5', this.checked)">
             <span class="toggle-track"></span>
           </label></div>
         </div>
       </div>
       <div class="alarm-row">
-        <button class="alarm-btn" onclick="toggleAlarm(this)">전날 밤</button>
-        <button class="alarm-btn" onclick="toggleAlarm(this)">1시간 전</button>
-        <button class="alarm-btn" onclick="toggleAlarm(this)">5분 전</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">전날 밤</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">1시간 전</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">5분 전</button>
       </div>
     </div>
 
     <!-- Unit Labor Costs -->
-    <div class="ind-card" id="card-ulc">
+    <div class="ind-card active-card" id="card-ulc">
       <div class="ind-top">
         <div class="ind-left">
           <div class="stars">⭐⭐⭐</div>
@@ -559,15 +559,15 @@
           <div class="ind-sub">분기별 · 임금발 인플레 선행</div>
           <span class="ind-time" data-pst-hour="5" data-pst-min="30">--:-- --</span>
           <div class="toggle-wrap"><label class="toggle">
-            <input type="checkbox" onchange="toggleCard('ulc', this.checked)">
+            <input type="checkbox" checked onchange="toggleCard('ulc', this.checked)">
             <span class="toggle-track"></span>
           </label></div>
         </div>
       </div>
       <div class="alarm-row">
-        <button class="alarm-btn" onclick="toggleAlarm(this)">전날 밤</button>
-        <button class="alarm-btn" onclick="toggleAlarm(this)">1시간 전</button>
-        <button class="alarm-btn" onclick="toggleAlarm(this)">5분 전</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">전날 밤</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">1시간 전</button>
+        <button class="alarm-btn on" onclick="toggleAlarm(this)">5분 전</button>
       </div>
     </div>
 
@@ -917,6 +917,8 @@ function saveSettings() {
 function loadSettings() {
   let settings = null;
   try { settings = JSON.parse(localStorage.getItem('us_alarm_settings')); } catch(e) {}
+  // Version check: if no settings saved yet, use HTML defaults (all enabled)
+  if (!settings) return;
   if (!settings) return;
 
   CARD_IDS.forEach(id => {
@@ -1255,61 +1257,56 @@ async function loadCalendar() {
   if (errorEl) errorEl.style.display = 'none';
   if (contentEl) contentEl.style.display = 'none';
 
+  // CORS 프록시 여러개 순서대로 시도
+  const proxies = [
+    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+    url => `https://thingproxy.freeboard.io/fetch/${url}`,
+  ];
+
+  async function fetchViaProxy(url) {
+    for (const makeProxy of proxies) {
+      try {
+        const proxyUrl = makeProxy(url);
+        const resp = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
+        if (!resp.ok) continue;
+        const text = await resp.text();
+        // allorigins wraps in {contents:...}
+        try {
+          const obj = JSON.parse(text);
+          if (obj.contents) return JSON.parse(obj.contents);
+          return obj;
+        } catch(e) {
+          return JSON.parse(text);
+        }
+      } catch(e) { continue; }
+    }
+    throw new Error('모든 프록시 실패');
+  }
+
   const now  = new Date();
   const from = new Date(now); from.setDate(from.getDate() - 4);
   const to   = new Date(now); to.setDate(to.getDate() + 30);
   const fmt  = d => d.toISOString().split('T')[0];
-  const proxy = url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
 
   try {
-    // Finnhub via CORS proxy
+    // Finnhub 시도
     const finnUrl = `https://finnhub.io/api/v1/calendar/economic?from=${fmt(from)}&to=${fmt(to)}&token=${FINNHUB_KEY}`;
-    const calResp = await fetch(proxy(finnUrl));
-    if (!calResp.ok) throw new Error(`프록시 오류: ${calResp.status}`);
-    const proxyData = await calResp.json();
-    const calData   = JSON.parse(proxyData.contents);
-
-    // Debug: show raw response info
+    const calData  = await fetchViaProxy(finnUrl);
     const allEvents = calData.economicCalendar || calData || [];
-    console.log('Finnhub raw keys:', Object.keys(calData));
-    console.log('Total events:', allEvents.length);
-    console.log('Sample:', JSON.stringify(allEvents.slice(0,2)));
-
-    // Try both US and united states filter
     const events = Array.isArray(allEvents) ? allEvents.filter(ev => {
-      const c = (ev.country || ev.Country || '').toUpperCase();
-      return c === 'US' || c === 'UNITED STATES' || c === 'USA';
+      const c = (ev.country||ev.Country||'').toUpperCase();
+      return c === 'US' || c === 'USA';
     }) : [];
 
-    console.log('US events:', events.length);
-
-    // If still empty, show all events as debug
-    if (events.length === 0 && allEvents.length > 0) {
-      // Show raw data in error box for debugging
-      if (errorEl) {
-        errorEl.style.display = 'block';
-        errorEl.style.background = 'rgba(0,196,255,0.05)';
-        errorEl.style.borderColor = 'rgba(0,196,255,0.2)';
-        errorEl.style.color = 'var(--text2)';
-        const sample = allEvents.slice(0,3).map(e => 
-          `${e.event||e.Event||'?'} | ${e.country||e.Country||'?'} | ${e.time||e.Date||'?'}`
-        ).join('<br>');
-        errorEl.innerHTML = `⚠ Finnhub 응답 수신됨 (${allEvents.length}개)<br>샘플:<br>${sample}<br><br>국가 필드명 확인 중...`;
-      }
-      // Try with any country field
-      const allCountries = [...new Set(allEvents.map(e => e.country||e.Country||'').filter(Boolean))];
-      console.log('Countries found:', allCountries.slice(0,10));
-    }
-
-    // FRED values
+    // FRED 값
     const fredData = {};
-    const ids = [...new Set(events.map(ev => getFredSeriesId(ev.event || ev.Event || '')).filter(Boolean))];
+    const ids = [...new Set(events.map(ev => getFredSeriesId(ev.event||ev.Event||'')).filter(Boolean))];
     await Promise.allSettled(ids.map(async sid => {
       try {
         const fredUrl = `https://api.stlouisfed.org/fred/series/observations?series_id=${sid}&api_key=${FRED_KEY}&file_type=json&sort_order=desc&limit=2`;
-        const r  = await fetch(proxy(fredUrl));
-        const pd = await r.json();
-        const obs = JSON.parse(pd.contents).observations;
+        const d = await fetchViaProxy(fredUrl);
+        const obs = d.observations;
         if (obs && obs.length > 0) {
           fredData[sid] = { value: obs[0].value, date: obs[0].date, prev: obs[1]?.value||null };
         }
@@ -1317,64 +1314,65 @@ async function loadCalendar() {
     }));
 
     if (events.length > 0) {
-      if (errorEl) errorEl.style.display = 'none';
       renderCalendar(events, fredData);
     } else {
-      // Fallback to hardcoded schedule + FRED
-      await loadFredOnly();
+      await loadFredOnly(fetchViaProxy);
     }
 
   } catch(e) {
-    console.error('loadCalendar error:', e);
+    console.error('Finnhub failed:', e.message);
     try {
-      loadingEl.textContent = '📡 FRED 데이터로 전환 중...';
-      await loadFredOnly();
+      loadingEl.textContent = '📡 일정 데이터로 전환 중...';
+      await loadFredOnly(fetchViaProxy);
     } catch(e2) {
       if (loadingEl) loadingEl.style.display = 'none';
       if (errorEl) {
         errorEl.style.display = 'block';
-        errorEl.innerHTML = `❌ ${e.message}`;
+        errorEl.innerHTML = `❌ 네트워크 오류: ${e2.message}<br>
+          <span style="font-size:11px;color:var(--text2)">WiFi/LTE 연결 상태를 확인해주세요</span>`;
       }
     }
   }
 }
 
-async function loadFredOnly() {
-  // Fallback: show FRED latest values with hardcoded upcoming dates
-  const proxy = url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+async function loadFredOnly(fetchViaProxy) {
+  // 하드코딩 일정 + FRED 최신값
   const upcomingEvents = [
-    { event: 'ISM Manufacturing PMI',    time: '2026-04-01T14:00:00Z', country: 'US' },
-    { event: 'JOLTS Job Openings',        time: '2026-04-01T14:00:00Z', country: 'US' },
-    { event: 'ADP Nonfarm Employment',    time: '2026-04-02T12:15:00Z', country: 'US' },
-    { event: 'Initial Jobless Claims',    time: '2026-04-03T12:30:00Z', country: 'US' },
-    { event: 'Nonfarm Payrolls',          time: '2026-04-04T12:30:00Z', country: 'US' },
-    { event: 'Unemployment Rate',         time: '2026-04-04T12:30:00Z', country: 'US' },
-    { event: 'CPI Inflation',             time: '2026-04-10T12:30:00Z', country: 'US' },
-    { event: 'Core CPI',                  time: '2026-04-10T12:30:00Z', country: 'US' },
-    { event: 'PPI Producer Price Index',  time: '2026-04-11T12:30:00Z', country: 'US' },
-    { event: 'Michigan Consumer Sentiment', time: '2026-04-11T14:00:00Z', country: 'US' },
-    { event: 'Retail Sales',              time: '2026-04-16T12:30:00Z', country: 'US' },
-    { event: 'Core PCE Price Index',      time: '2026-04-30T12:30:00Z', country: 'US' },
-    { event: 'GDP Growth Rate',           time: '2026-04-30T12:30:00Z', country: 'US' },
-    { event: 'FOMC Interest Rate Decision', time: '2026-05-07T18:00:00Z', country: 'US' },
+    { event: 'ISM Manufacturing PMI',      time: '2026-04-01T14:00:00Z' },
+    { event: 'JOLTS Job Openings',          time: '2026-04-01T14:00:00Z' },
+    { event: 'ADP Nonfarm Employment',      time: '2026-04-02T12:15:00Z' },
+    { event: 'Initial Jobless Claims',      time: '2026-04-03T12:30:00Z' },
+    { event: 'Nonfarm Payrolls',            time: '2026-04-04T12:30:00Z' },
+    { event: 'Unemployment Rate',           time: '2026-04-04T12:30:00Z' },
+    { event: 'CPI Inflation',               time: '2026-04-10T12:30:00Z' },
+    { event: 'Core CPI',                    time: '2026-04-10T12:30:00Z' },
+    { event: 'PPI Producer Price Index',    time: '2026-04-11T12:30:00Z' },
+    { event: 'Michigan Consumer Sentiment', time: '2026-04-11T14:00:00Z' },
+    { event: 'Retail Sales',                time: '2026-04-16T12:30:00Z' },
+    { event: 'Core PCE Price Index',        time: '2026-04-30T12:30:00Z' },
+    { event: 'GDP Growth Rate',             time: '2026-04-30T12:30:00Z' },
+    { event: 'FOMC Interest Rate Decision', time: '2026-05-07T18:00:00Z' },
+    { event: 'Unit Labor Costs',            time: '2026-05-07T12:30:00Z' },
   ];
 
   const fredData = {};
-  const ids = [...new Set(upcomingEvents.map(ev => getFredSeriesId(ev.event)).filter(Boolean))];
-  await Promise.allSettled(ids.map(async sid => {
-    try {
-      const fredUrl = `https://api.stlouisfed.org/fred/series/observations?series_id=${sid}&api_key=${FRED_KEY}&file_type=json&sort_order=desc&limit=2`;
-      const r = await fetch(proxy(fredUrl));
-      const pd = await r.json();
-      const obs = JSON.parse(pd.contents).observations;
-      if (obs && obs.length > 0) {
-        fredData[sid] = { value: obs[0].value, date: obs[0].date, prev: obs[1]?.value || null };
-      }
-    } catch(e) {}
-  }));
+  if (typeof fetchViaProxy === 'function') {
+    const ids = [...new Set(upcomingEvents.map(ev => getFredSeriesId(ev.event)).filter(Boolean))];
+    await Promise.allSettled(ids.map(async sid => {
+      try {
+        const fredUrl = `https://api.stlouisfed.org/fred/series/observations?series_id=${sid}&api_key=${FRED_KEY}&file_type=json&sort_order=desc&limit=2`;
+        const d = await fetchViaProxy(fredUrl);
+        const obs = d.observations;
+        if (obs && obs.length > 0) {
+          fredData[sid] = { value: obs[0].value, date: obs[0].date, prev: obs[1]?.value||null };
+        }
+      } catch(e) {}
+    }));
+  }
 
   renderCalendar(upcomingEvents, fredData);
 }
+
 
 // ===== 초기화: 저장된 설정 불러오기 =====
 loadSettings();
